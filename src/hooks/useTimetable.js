@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { getLocalTodayDateString } from '../utils/dateUtils';
 
 const TASK_STORAGE_KEY = 'personal-assistant-timetable';
 
 const defaultTasks = [
-  { id: 'sample-1', title: 'Plan today in 5 minutes', time: '09:00', type: 'focus', done: false, createdAt: 1 },
-  { id: 'sample-2', title: 'Log evening expenses', time: '21:00', type: 'money', done: false, createdAt: 2 },
+  { id: 'sample-1', title: 'Plan today in 5 minutes', time: '09:00', date: getLocalTodayDateString(), type: 'focus', done: false, createdAt: 1 },
+  { id: 'sample-2', title: 'Log evening expenses', time: '21:00', date: getLocalTodayDateString(), type: 'money', done: false, createdAt: 2 },
 ];
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -12,8 +13,15 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)
 const readTasks = () => {
   try {
     const saved = window.localStorage.getItem(TASK_STORAGE_KEY);
-    const parsed = saved ? JSON.parse(saved) : defaultTasks;
-    return Array.isArray(parsed) ? parsed : defaultTasks;
+    const parsed = saved ? JSON.parse(saved) : null;
+    if (Array.isArray(parsed)) {
+      const today = getLocalTodayDateString();
+      return parsed.map(task => ({
+        ...task,
+        date: task.date || today
+      }));
+    }
+    return defaultTasks;
   } catch {
     return defaultTasks;
   }
@@ -37,6 +45,7 @@ export const useTimetable = () => {
           id: generateId(),
           title: task.title.trim(),
           time: task.time,
+          date: task.date || getLocalTodayDateString(),
           type: task.type,
           done: false,
           createdAt: Date.now(),
@@ -50,11 +59,15 @@ export const useTimetable = () => {
     setTasks((current) => current.map((task) => (task.id === id ? { ...task, done: !task.done } : task)));
   };
 
+  const editTask = (id, updates) => {
+    setTasks((current) => current.map((task) => (task.id === id ? { ...task, ...updates } : task)));
+  };
+
   const removeTask = (id) => {
     setTasks((current) => current.filter((task) => task.id !== id));
   };
 
-  return { tasks, addTask, toggleTask, removeTask };
+  return { tasks, addTask, toggleTask, editTask, removeTask };
 };
 
 export default useTimetable;

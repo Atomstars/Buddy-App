@@ -37,6 +37,8 @@ export const formatDateISO = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+export const getLocalTodayDateString = () => formatDateISO(new Date());
+
 export const getDaysInWeek = (weekStart = getWeekStart()) => {
   const days = [];
   for (let i = 0; i < 7; i++) {

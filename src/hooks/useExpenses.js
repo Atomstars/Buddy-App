@@ -26,6 +26,8 @@ const legacyDefaultBudgets = {
 const defaultState = {
   expenses: [],
   budgets: defaultBudgets,
+  weeklyTarget: 0,
+  monthlyTarget: 0,
   currency: INR_CURRENCY,
   noSpendDays: [],
 };
@@ -73,6 +75,8 @@ const normalizeState = (saved) => {
   return {
     expenses,
     budgets: normalizeBudgets(saved),
+    weeklyTarget: typeof saved.weeklyTarget === 'number' ? saved.weeklyTarget : 0,
+    monthlyTarget: typeof saved.monthlyTarget === 'number' ? saved.monthlyTarget : 0,
     currency: INR_CURRENCY,
     noSpendDays,
   };
@@ -114,12 +118,18 @@ const getPeriodBudget = (budgets, period) => {
   }, {});
 };
 
-const getCurrentPeriodStats = (expenses, budgets, period) => {
+const getCurrentPeriodStats = (expenses, budgets, period, weeklyTarget = 0, monthlyTarget = 0) => {
   const start = period === 'month' ? getMonthStart() : getWeekStart();
   const scoped = getRangeExpenses(expenses, start);
   const total = sumExpenses(scoped);
   const periodBudgets = getPeriodBudget(budgets, period);
-  const totalBudget = Object.values(periodBudgets).reduce((sum, amount) => sum + amount, 0);
+  let totalBudget = Object.values(periodBudgets).reduce((sum, amount) => sum + amount, 0);
+
+  if (period === 'week' && weeklyTarget > 0) {
+    totalBudget = weeklyTarget;
+  } else if (period === 'month' && monthlyTarget > 0) {
+    totalBudget = monthlyTarget;
+  }
 
   return {
     total,
@@ -141,17 +151,58 @@ const getTrackingDates = (expenses, noSpendDays) => {
   return new Set([...expenseDays, ...noSpendDays]);
 };
 
-const getTrackingStreak = (expenses, noSpendDays) => {
-  const tracked = getTrackingDates(expenses, noSpendDays);
-  let streak = 0;
-  const cursor = new Date();
+const getZeroDayStreak = (expenses, noSpendDays) => {
+  const allNoSpendDates = [...noSpendDays].sort().reverse();
+  const expenseDates = new Set(expenses.map(e => formatDateISO(new Date(e.date))));
+  
+  // A day is truly "zero" if it's in noSpendDays AND has no expenses
+  const trueZeroDays = allNoSpendDates.filter(day => !expenseDates.has(day));
+  
+  if (trueZeroDays.length === 0) return { streak: 0, active: false };
 
-  while (tracked.has(formatDateISO(cursor))) {
-    streak += 1;
+  let currentStreak = 0;
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  // Find the most recent zero-day run
+  let latestZeroDate = null;
+  let streakCount = 0;
+  let cursor = new Date(today);
+
+  // Find if we are currently in or just after a streak
+  while (cursor >= new Date(2020, 0, 1)) {
+    const dateStr = formatDateISO(cursor);
+    const isZero = trueZeroDays.includes(dateStr);
+    
+    if (isZero) {
+      if (!latestZeroDate) latestZeroDate = new Date(cursor);
+      streakCount++;
+    } else if (latestZeroDate) {
+      // Streak ended at this cursor
+      break;
+    }
     cursor.setDate(cursor.getDate() - 1);
   }
 
-  return streak;
+  if (streakCount === 0) return { streak: 0, active: false };
+
+  // Logic: N zero days = N + 1 days active window from the START of the streak
+  // But wait, the user says "monday no spend -> active Mon & Tue".
+  // "consecutive 2 streaks -> 3 days active".
+  // So Window = [StartOfStreakDate, StartOfStreakDate + N + 1 days]
+  const streakStartDate = new Date(latestZeroDate);
+  streakStartDate.setDate(streakStartDate.getDate() - (streakCount - 1));
+  
+  const activeUntil = new Date(streakStartDate);
+  activeUntil.setDate(activeUntil.getDate() + streakCount); // N zero days gives N+1 days inclusive
+
+  const isActive = today <= activeUntil;
+
+  return { 
+    streak: streakCount, 
+    active: isActive,
+    activeUntil: formatDateISO(activeUntil)
+  };
 };
 
 const getBudgetStreak = (expenses, budgets) => {
@@ -241,6 +292,20 @@ export const useExpenses = () => {
     }));
   }, []);
 
+  const updateWeeklyTarget = useCallback((amount) => {
+    setState((previous) => ({
+      ...previous,
+      weeklyTarget: Math.max(0, Number(amount) || 0),
+    }));
+  }, []);
+
+  const updateMonthlyTarget = useCallback((amount) => {
+    setState((previous) => ({
+      ...previous,
+      monthlyTarget: Math.max(0, Number(amount) || 0),
+    }));
+  }, []);
+
   const markNoSpendToday = useCallback(() => {
     const today = formatDateISO(new Date());
 
@@ -279,8 +344,8 @@ export const useExpenses = () => {
         expenses: todayExpenses,
         noSpendMarked: state.noSpendDays.includes(formatDateISO(new Date())),
       }),
-      getWeeklyStats: () => getCurrentPeriodStats(state.expenses, state.budgets, 'week'),
-      getMonthlyStats: () => getCurrentPeriodStats(state.expenses, state.budgets, 'month'),
+      getWeeklyStats: () => getCurrentPeriodStats(state.expenses, state.budgets, 'week', state.weeklyTarget),
+      getMonthlyStats: () => getCurrentPeriodStats(state.expenses, state.budgets, 'month', 0, state.monthlyTarget),
       getSpendingBySector: (sector) => ({
         week: sumExpenses(
           getRangeExpenses(state.expenses, getWeekStart()).filter((expense) => expense.sector === sector)
@@ -290,7 +355,7 @@ export const useExpenses = () => {
         ),
         count: state.expenses.filter((expense) => expense.sector === sector).length,
       }),
-      getTrackingStreak: () => getTrackingStreak(state.expenses, state.noSpendDays),
+      getZeroDayStreak: () => getZeroDayStreak(state.expenses, state.noSpendDays),
       getBudgetStreak: () => getBudgetStreak(state.expenses, state.budgets),
       isDateTracked: (date) => {
         const day = formatDateISO(date);
@@ -305,12 +370,16 @@ export const useExpenses = () => {
   return {
     expenses: state.expenses,
     budgets: state.budgets,
+    weeklyTarget: state.weeklyTarget,
+    monthlyTarget: state.monthlyTarget,
     currency: state.currency,
     noSpendDays: state.noSpendDays,
     addExpense,
     updateExpense,
     removeExpense,
     updateBudget,
+    updateWeeklyTarget,
+    updateMonthlyTarget,
     markNoSpendToday,
     clearNoSpendToday,
     ...selectors,

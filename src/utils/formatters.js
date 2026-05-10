@@ -6,19 +6,55 @@ export const SECTORS = [
     id: 'groceries',
     label: 'Groceries',
     shortLabel: 'Groceries',
-    color: '#16A34A',
+    color: '#16A34A', // Green
+  },
+  {
+    id: 'fruits',
+    label: 'Fruits & Vegetables',
+    shortLabel: 'Produce',
+    color: '#84CC16', // Lime
   },
   {
     id: 'food',
     label: 'Food & Coffee',
     shortLabel: 'Food',
-    color: '#EA580C',
+    color: '#EA580C', // Orange
+  },
+  {
+    id: 'transport',
+    label: 'Transport & Fuel',
+    shortLabel: 'Transport',
+    color: '#3B82F6', // Blue
+  },
+  {
+    id: 'shopping',
+    label: 'Shopping',
+    shortLabel: 'Shopping',
+    color: '#EC4899', // Pink
+  },
+  {
+    id: 'bills',
+    label: 'Bills & Utilities',
+    shortLabel: 'Bills',
+    color: '#EAB308', // Yellow
+  },
+  {
+    id: 'health',
+    label: 'Health & Wellness',
+    shortLabel: 'Health',
+    color: '#06B6D4', // Cyan
   },
   {
     id: 'fun',
     label: 'Fun & Weekends',
     shortLabel: 'Fun',
-    color: '#7C3AED',
+    color: '#7C3AED', // Purple
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    shortLabel: 'Other',
+    color: '#6B7280', // Gray
   },
 ];
 

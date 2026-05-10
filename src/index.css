@@ -2,12 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, html.light {
   --bg: #f7f4ef;
   --ink: #161a1d;
   --muted: #6b7280;
   --line: #e3ded5;
-  --panel: #fffdf8;
+  --panel: rgba(255, 253, 248, 0.65);
   --panel-strong: #ffffff;
   --green: #16784f;
   --green-soft: #e5f4ec;
@@ -18,8 +18,52 @@
   --blue: #245a7a;
   --blue-soft: #e5f0f5;
   --shadow: 0 20px 50px rgba(36, 29, 20, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.4);
   color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Outfit', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html.dark {
+  --bg: #05070a;
+  --ink: #f8fafc;
+  --muted: #94a3b8;
+  --line: rgba(255, 255, 255, 0.08);
+  --panel: rgba(13, 17, 23, 0.75);
+  --panel-strong: #0d1117;
+  --green: #2ecc71;
+  --green-soft: rgba(46, 204, 113, 0.12);
+  --amber: #f1c40f;
+  --amber-soft: rgba(241, 196, 15, 0.12);
+  --red: #e74c3c;
+  --red-soft: rgba(231, 76, 60, 0.12);
+  --blue: #3498db;
+  --blue-soft: rgba(52, 152, 219, 0.12);
+  --shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.04);
+  color-scheme: dark;
+}
+
+html.dark .eyebrow {
+  color: var(--blue);
+  filter: brightness(1.2);
+}
+
+html.dark .module-switch button {
+  color: var(--bg);
+  opacity: 0.6;
+}
+
+html.dark .module-switch button.active {
+  color: var(--bg);
+  opacity: 1;
+}
+
+html.dark .budget-tabs button {
+  color: var(--muted);
+}
+
+html.dark .budget-tabs button.active {
+  color: var(--bg);
 }
 
 * {
@@ -35,13 +79,40 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at 12% 0%, rgba(36, 90, 122, 0.18), transparent 28rem),
-    radial-gradient(circle at 86% 8%, rgba(124, 58, 237, 0.12), transparent 22rem),
-    linear-gradient(180deg, rgba(229, 240, 245, 0.75) 0%, rgba(247, 244, 239, 0) 340px),
-    var(--bg);
+  background: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 10% 0%, var(--blue-soft), transparent 35rem),
+    radial-gradient(circle at 90% 10%, rgba(124, 58, 237, 0.06), transparent 28rem),
+    linear-gradient(180deg, var(--bg) 0%, transparent 600px);
+  pointer-events: none;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.025;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+html.dark body::before {
+  background:
+    radial-gradient(circle at 10% 0%, rgba(52, 152, 219, 0.08), transparent 40rem),
+    radial-gradient(circle at 90% 10%, rgba(139, 92, 246, 0.06), transparent 32rem),
+    linear-gradient(180deg, #05070a 0%, transparent 800px);
 }
 
 button,
@@ -65,20 +136,23 @@ button {
 .app-container {
   width: min(100%, 980px);
   margin: 0 auto;
-  padding: 0 16px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
 }
 
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 30;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: calc(14px + env(safe-area-inset-top)) 0 12px;
-  background: rgba(247, 244, 239, 0.88);
-  backdrop-filter: blur(18px);
+  padding: calc(20px + env(safe-area-inset-top)) 0 20px;
+  background: var(--bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--line);
 }
 
 .app-header h1,
@@ -89,6 +163,7 @@ button {
 }
 
 .app-header h1 {
+  color: var(--ink);
   font-size: clamp(1.35rem, 4vw, 2rem);
   line-height: 1;
   font-weight: 800;
@@ -120,9 +195,12 @@ button {
   gap: 4px;
   min-height: 42px;
   padding: 4px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--glass-border);
   border-radius: 999px;
-  background: rgba(255, 253, 248, 0.88);
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .module-switch {
@@ -148,8 +226,9 @@ button {
 }
 
 .module-switch button.active {
-  background: #f7f4ef;
+  background: var(--panel-strong);
   color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .segmented-control button {
@@ -166,7 +245,7 @@ button {
 
 .segmented-control button.active {
   background: var(--ink);
-  color: white;
+  color: var(--bg);
 }
 
 .icon-button {
@@ -196,7 +275,8 @@ button {
 
 main {
   display: grid;
-  gap: 16px;
+  gap: 24px;
+  padding-top: 12px;
 }
 
 .module-stack {
@@ -207,32 +287,48 @@ main {
 .alert-deck {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
+  margin-top: 8px;
 }
 
 .alert-card {
   display: grid;
   grid-template-columns: 38px 1fr;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   min-width: 0;
-  min-height: 76px;
-  padding: 10px;
+  min-height: 82px;
+  padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgba(255, 253, 248, 0.92);
-  box-shadow: 0 16px 36px rgba(36, 29, 20, 0.07);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.alert-card strong,
-.alert-card small {
+.alert-card:hover {
+  transform: translateY(-2px);
+  background: var(--panel-strong);
+  border-color: var(--blue);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.alert-card strong {
   display: block;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.alert-card small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.3;
 }
 
 .alert-card strong {
@@ -254,6 +350,40 @@ main {
   border-radius: 14px;
   color: var(--green);
   background: var(--green-soft);
+  animation: pulse-soft 2s infinite ease-in-out;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.streak-active-glitch {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--green) !important;
+  box-shadow: 0 0 20px var(--green-soft);
+  animation: card-float 6s ease-in-out infinite;
+}
+
+.streak-active-glitch::after {
+  content: '';
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(from 0deg, transparent, var(--green-soft), transparent 25%);
+  animation: rotate-streak 4s linear infinite;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+@keyframes rotate-streak {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes card-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .alert-card.tone-watch .alert-icon,
@@ -278,14 +408,14 @@ main {
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
   gap: 18px;
   overflow: hidden;
-  padding: 22px;
-  border: 1px solid rgba(22, 26, 29, 0.1);
-  border-radius: 28px;
-  background:
-    linear-gradient(135deg, rgba(22, 26, 29, 0.94), rgba(36, 90, 122, 0.92)),
-    var(--ink);
-  color: white;
-  box-shadow: 0 26px 70px rgba(22, 26, 29, 0.22);
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 32px;
+  background: linear-gradient(135deg, rgba(20, 25, 35, 0.95), rgba(10, 15, 25, 0.95)), #0B0F19;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: #ffffff;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.15);
 }
 
 .assistant-copy {
@@ -347,11 +477,18 @@ main {
   display: grid;
   gap: 5px;
   min-width: 0;
-  padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.hero-metrics div:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .hero-metrics span,
@@ -373,13 +510,13 @@ main {
 .badge-row {
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: rgba(255, 253, 248, 0.92);
+  background: var(--panel);
   box-shadow: var(--shadow);
 }
 
 .priority-budget {
   border-color: rgba(36, 90, 122, 0.2);
-  background: rgba(255, 253, 248, 0.96);
+  background: var(--panel);
 }
 
 .budget-stage {
@@ -392,10 +529,10 @@ main {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 8px;
-  border: 1px solid rgba(22, 26, 29, 0.1);
+  border: 1px solid var(--line);
   border-radius: 18px;
-  background: rgba(255, 253, 248, 0.84);
-  box-shadow: 0 14px 34px rgba(36, 29, 20, 0.06);
+  background: var(--panel);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.06);
 }
 
 .budget-tabs button {
@@ -410,7 +547,7 @@ main {
 
 .budget-tabs button.active {
   background: var(--ink);
-  color: white;
+  color: var(--bg);
 }
 
 .goals-panel {
@@ -567,7 +704,7 @@ main {
   gap: 3px;
   padding: 10px;
   border-radius: 14px;
-  background: #f7f4ef;
+  background: var(--panel);
 }
 
 .goal-card-stats span {
@@ -938,11 +1075,9 @@ button.check-pill {
   gap: 18px;
   align-items: center;
   padding: 22px;
-  border: 1px solid rgba(22, 26, 29, 0.1);
+  border: 1px solid var(--line);
   border-radius: 28px;
-  background:
-    linear-gradient(135deg, rgba(255, 253, 248, 0.94), rgba(229, 240, 245, 0.88)),
-    var(--panel);
+  background: var(--panel);
   box-shadow: var(--shadow);
 }
 
@@ -1209,7 +1344,7 @@ button.check-pill {
   place-items: center;
   gap: 8px;
   min-height: 180px;
-  border: 1px dashed #d8cfc0;
+  border: 1px dashed var(--line);
   border-radius: 18px;
   color: var(--muted);
   text-align: center;
@@ -1236,8 +1371,8 @@ button.check-pill {
   border: 0;
   border-radius: 22px;
   background: var(--ink);
-  color: white;
-  box-shadow: 0 18px 42px rgba(22, 26, 29, 0.24);
+  color: var(--bg);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.4);
   cursor: pointer;
 }
 
@@ -1371,7 +1506,7 @@ button.check-pill {
   border: 0;
   border-radius: 17px;
   background: var(--ink);
-  color: white;
+  color: var(--bg);
   cursor: pointer;
   font-weight: 900;
 }

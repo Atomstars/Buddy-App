@@ -3,7 +3,9 @@ import { Plus } from 'lucide-react';
 import useExpenses from './hooks/useExpenses';
 import useGoals from './hooks/useGoals';
 import useTimetable from './hooks/useTimetable';
+import { useTheme } from './hooks/useTheme';
 import { getCoachState } from './utils/assistantLogic';
+import { getLocalTodayDateString } from './utils/dateUtils';
 import { AppHeader, AlertDeck, AssistantHero } from './components/AssistantShell';
 import { AddExpenseModal, BudgetModule, SettingsModal } from './components/BudgetModule';
 import TimetableModule from './components/TimetableModule';
@@ -16,6 +18,7 @@ function App() {
   const [selectedSector, setSelectedSector] = useState('groceries');
   const [editingExpense, setEditingExpense] = useState(null);
 
+  const { theme, toggleTheme } = useTheme();
   const timetable = useTimetable();
   const goals = useGoals();
   const {
@@ -25,21 +28,31 @@ function App() {
     updateExpense,
     removeExpense,
     updateBudget,
+    updateWeeklyTarget,
+    updateMonthlyTarget,
     markNoSpendToday,
     getTodayStats,
     getWeeklyStats,
     getMonthlyStats,
-    getTrackingStreak,
+    getZeroDayStreak,
+    weeklyTarget,
+    monthlyTarget,
   } = useExpenses();
 
   const todayStats = getTodayStats();
   const weeklyStats = getWeeklyStats();
   const monthlyStats = getMonthlyStats();
-  const trackingStreak = getTrackingStreak();
+  const zeroDayStreak = getZeroDayStreak();
   const activeStats = budgetView === 'month' ? monthlyStats : weeklyStats;
+  
+  const todayTasks = useMemo(() => {
+    const today = getLocalTodayDateString();
+    return timetable.tasks.filter(t => t.date === today);
+  }, [timetable.tasks]);
+
   const coach = useMemo(
-    () => getCoachState({ weeklyStats, monthlyStats, todayStats, trackingStreak, tasks: timetable.tasks }),
-    [weeklyStats, monthlyStats, todayStats, trackingStreak, timetable.tasks]
+    () => getCoachState({ weeklyStats, monthlyStats, todayStats, zeroDayStreak, tasks: todayTasks }),
+    [weeklyStats, monthlyStats, todayStats, zeroDayStreak, todayTasks]
   );
 
   const openAddExpense = (sector = selectedSector) => {
@@ -69,29 +82,34 @@ function App() {
         <AppHeader
           activeModule={activeModule}
           setActiveModule={setActiveModule}
-          budgetView={budgetView}
-          setBudgetView={setBudgetView}
           onSettings={() => setShowSettings(true)}
+          theme={theme}
+          toggleTheme={toggleTheme}
         />
         <main>
-          <AlertDeck
-            coach={coach}
-            todayStats={todayStats}
-            trackingStreak={trackingStreak}
-            onNoSpend={markNoSpendToday}
-            activeModule={activeModule}
-            setActiveModule={setActiveModule}
-          />
-          <AssistantHero
-            coach={coach}
-            todayStats={todayStats}
-            weeklyStats={weeklyStats}
-            monthlyStats={monthlyStats}
-            tasks={timetable.tasks}
-          />
+          {activeModule === 'budget' && (
+            <>
+              <AlertDeck
+                coach={coach}
+                todayStats={todayStats}
+                zeroDayStreak={zeroDayStreak}
+                onNoSpend={markNoSpendToday}
+                activeModule={activeModule}
+                setActiveModule={setActiveModule}
+              />
+              <AssistantHero
+                coach={coach}
+                todayStats={todayStats}
+                weeklyStats={weeklyStats}
+                monthlyStats={monthlyStats}
+                tasks={todayTasks}
+              />
+            </>
+          )}
           {activeModule === 'budget' ? (
             <BudgetModule
               view={budgetView}
+              setView={setBudgetView}
               activeStats={activeStats}
               todayStats={todayStats}
               weeklyStats={weeklyStats}
@@ -113,6 +131,7 @@ function App() {
               tasks={timetable.tasks}
               onAddTask={timetable.addTask}
               onToggleTask={timetable.toggleTask}
+              onEditTask={timetable.editTask}
               onDeleteTask={timetable.removeTask}
               coach={coach}
             />
@@ -131,7 +150,16 @@ function App() {
         defaultSector={selectedSector}
         editingExpense={editingExpense}
       />
-      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} budgets={budgets} onUpdateBudget={updateBudget} />
+      <SettingsModal 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
+        budgets={budgets} 
+        onUpdateBudget={updateBudget} 
+        weeklyTarget={weeklyTarget}
+        monthlyTarget={monthlyTarget}
+        onUpdateWeeklyTarget={updateWeeklyTarget}
+        onUpdateMonthlyTarget={updateMonthlyTarget}
+      />
     </div>
   );
 }

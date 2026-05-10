@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, Flame, Settings, ShieldCheck } from 'lucide-react';
+import { Check, Flame, Settings, ShieldCheck, Moon, Sun, Apple } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
 import { formatDate } from '../utils/dateUtils';
 import { moduleLabels, viewLabels } from '../utils/assistantLogic';
 import { IconButton } from './common';
 
-export const AppHeader = ({ activeModule, setActiveModule, budgetView, setBudgetView, onSettings }) => (
+export const AppHeader = ({ activeModule, setActiveModule, onSettings, theme, toggleTheme }) => (
   <header className="app-header">
     <div>
       <p className="eyebrow">Personal Assistant</p>
@@ -21,15 +21,10 @@ export const AppHeader = ({ activeModule, setActiveModule, budgetView, setBudget
           </button>
         ))}
       </div>
-      {activeModule === 'budget' ? (
-        <div className="segmented-control" aria-label="Budget view">
-          {Object.entries(viewLabels).map(([id, label]) => (
-            <button key={id} className={budgetView === id ? 'active' : ''} onClick={() => setBudgetView(id)}>
-              {label}
-            </button>
-          ))}
-        </div>
-      ) : null}
+
+      <IconButton label="Toggle Theme" onClick={toggleTheme}>
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </IconButton>
       <IconButton label="Settings" onClick={onSettings}>
         <Settings size={20} />
       </IconButton>
@@ -37,7 +32,7 @@ export const AppHeader = ({ activeModule, setActiveModule, budgetView, setBudget
   </header>
 );
 
-export const AlertDeck = ({ coach, todayStats, trackingStreak, onNoSpend, activeModule, setActiveModule }) => {
+export const AlertDeck = ({ coach, todayStats, zeroDayStreak, onNoSpend, activeModule, setActiveModule }) => {
   const CoachIcon = coach.icon;
   const alertCards = [
     {
@@ -49,12 +44,15 @@ export const AlertDeck = ({ coach, todayStats, trackingStreak, onNoSpend, active
       onClick: () => setActiveModule('budget'),
     },
     {
-      id: 'pace',
-      label: 'Watch pace',
-      value: `${formatCurrency(coach.safeWeekly)} safe today`,
-      icon: ShieldCheck,
-      tone: 'watch',
-      onClick: () => setActiveModule('budget'),
+      id: 'zero-day',
+      label: 'ZERO DAY',
+      value: zeroDayStreak.active 
+        ? `Streak active! ${zeroDayStreak.streak} days` 
+        : 'Aim for a clean day today',
+      icon: Flame,
+      tone: zeroDayStreak.active ? 'win' : 'quiet',
+      className: zeroDayStreak.active ? 'streak-active-glitch' : '',
+      onClick: onNoSpend,
     },
     {
       id: 'no-spend',
@@ -65,12 +63,12 @@ export const AlertDeck = ({ coach, todayStats, trackingStreak, onNoSpend, active
       onClick: onNoSpend,
     },
     {
-      id: 'streak',
-      label: 'Tracking streak',
-      value: `${trackingStreak} day rhythm`,
-      icon: Flame,
-      tone: trackingStreak > 0 ? 'win' : 'quiet',
-      onClick: () => setActiveModule(activeModule === 'budget' ? 'timetable' : 'budget'),
+      id: 'budget-health',
+      label: 'Budget context',
+      value: `₹${Math.round(coach.safeWeekly)}/day limit`,
+      icon: ShieldCheck,
+      tone: 'steady',
+      onClick: () => setActiveModule('budget'),
     },
   ];
 
@@ -122,8 +120,8 @@ export const AssistantHero = ({ coach, todayStats, weeklyStats, monthlyStats, ta
           <strong>{formatCurrency(todayStats.total)}</strong>
         </div>
         <div>
-          <span>Week left</span>
-          <strong>{formatCurrency(Math.max(0, weeklyStats.remaining))}</strong>
+          <span>Month left</span>
+          <strong>{formatCurrency(Math.max(0, monthlyStats.remaining))}</strong>
         </div>
         <div>
           <span>Month pace</span>

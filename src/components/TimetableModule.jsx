@@ -1,7 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CalendarCheck, IndianRupee, Plus, Sparkles, Target, Trash2 } from 'lucide-react';
+import { CalendarCheck, IndianRupee, Plus, Sparkles, Target, Trash2, Pencil } from 'lucide-react';
 import { IconButton, Modal, ProgressBar } from './common';
+import { getLocalTodayDateString } from '../utils/dateUtils';
+
+const getNextDays = (numDays) => {
+  const dates = [];
+  const today = new Date();
+  for (let i = 0; i < numDays; i++) {
+    const nextDate = new Date(today);
+    nextDate.setDate(today.getDate() + i);
+    dates.push({
+      dateStr: nextDate.toISOString().split('T')[0],
+      label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : nextDate.toLocaleDateString('en-US', { weekday: 'short' }),
+      day: nextDate.getDate()
+    });
+  }
+  return dates;
+};
 
 const taskTypes = [
   { id: 'focus', label: 'Focus', icon: Target },
@@ -10,12 +26,17 @@ const taskTypes = [
   { id: 'fun', label: 'Fun', icon: Sparkles },
 ];
 
-export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onDeleteTask, coach }) => {
+export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onEditTask, onDeleteTask, coach }) => {
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const sortedTasks = [...tasks].sort((a, b) => a.time.localeCompare(b.time));
-  const doneCount = tasks.filter((task) => task.done).length;
-  const progress = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
+  const [editingTask, setEditingTask] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(getLocalTodayDateString());
+  
+  const dailyTasks = tasks.filter(t => t.date === selectedDate);
+  const sortedTasks = [...dailyTasks].sort((a, b) => a.time.localeCompare(b.time));
+  const doneCount = dailyTasks.filter((task) => task.done).length;
+  const progress = dailyTasks.length ? Math.round((doneCount / dailyTasks.length) * 100) : 0;
   const nextTask = sortedTasks.find((task) => !task.done);
+  const dateStrip = getNextDays(7);
 
   return (
     <motion.div className="module-stack" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -31,12 +52,29 @@ export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onDeleteTask, 
           <p className="eyebrow">3D timetable</p>
           <h2>{progress}% of today handled</h2>
           <p>{nextTask ? `Next: ${nextTask.title} at ${nextTask.time}.` : 'You cleared the board. Add the next reminder when ready.'}</p>
-          <button className="primary-button inline" onClick={() => setShowTaskModal(true)}>
+          <button className="primary-button inline" onClick={() => {
+            setEditingTask(null);
+            setShowTaskModal(true);
+          }}>
             <Plus size={18} />
             Add reminder
           </button>
         </div>
       </section>
+
+      <div className="check-strip" style={{ overflowX: 'auto', padding: '10px', display: 'flex', gap: '8px' }}>
+        {dateStrip.map(d => (
+          <button 
+            key={d.dateStr} 
+            onClick={() => setSelectedDate(d.dateStr)}
+            className={`check-pill ${selectedDate === d.dateStr ? 'done' : ''}`}
+            style={{ flexDirection: 'column', alignItems: 'center', minHeight: 'auto', padding: '8px 16px', gap: '2px' }}
+          >
+            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>{d.label}</span>
+            <strong style={{ fontSize: '1rem', lineHeight: 1 }}>{d.day}</strong>
+          </button>
+        ))}
+      </div>
 
       <section className="section-block">
         <div className="section-title">
@@ -44,7 +82,7 @@ export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onDeleteTask, 
             <p className="eyebrow">Today timetable</p>
             <h2>Funny, firm, usable</h2>
           </div>
-          <span>{doneCount}/{tasks.length} done</span>
+          <span>{doneCount}/{dailyTasks.length} done</span>
         </div>
         <ProgressBar value={progress} tone={progress < 45 ? 'watch' : 'normal'} />
         <div className="task-list">
@@ -63,9 +101,17 @@ export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onDeleteTask, 
                     <small>{task.done ? 'Done. Nice.' : `${type.label} mode`}</small>
                   </span>
                 </button>
-                <IconButton label="Delete task" className="danger" onClick={() => onDeleteTask(task.id)}>
-                  <Trash2 size={16} />
-                </IconButton>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <IconButton label="Edit task" onClick={() => {
+                    setEditingTask(task);
+                    setShowTaskModal(true);
+                  }}>
+                    <Pencil size={16} />
+                  </IconButton>
+                  <IconButton label="Delete task" className="danger" onClick={() => onDeleteTask(task.id)}>
+                    <Trash2 size={16} />
+                  </IconButton>
+                </div>
               </article>
             );
           })}
@@ -93,27 +139,51 @@ export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onDeleteTask, 
         </div>
       </section>
 
-      <TaskModal isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} onSave={onAddTask} />
+      <TaskModal 
+        isOpen={showTaskModal} 
+        onClose={() => {
+          setShowTaskModal(false);
+          setEditingTask(null);
+        }} 
+        onSave={(data) => {
+          if (editingTask) {
+            onEditTask(editingTask.id, data);
+          } else {
+            onAddTask(data);
+          }
+        }} 
+        defaultDate={selectedDate} 
+        editData={editingTask}
+      />
     </motion.div>
   );
 };
 
-const TaskModal = ({ isOpen, onClose, onSave }) => {
+const TaskModal = ({ isOpen, onClose, onSave, defaultDate, editData }) => {
   const [title, setTitle] = useState('');
   const [time, setTime] = useState('09:00');
+  const [date, setDate] = useState(defaultDate || getLocalTodayDateString());
   const [type, setType] = useState('focus');
 
   useEffect(() => {
     if (!isOpen) return;
-    setTitle('');
-    setTime('09:00');
-    setType('focus');
-  }, [isOpen]);
+    if (editData) {
+      setTitle(editData.title);
+      setTime(editData.time);
+      setDate(editData.date);
+      setType(editData.type);
+    } else {
+      setTitle('');
+      setTime('09:00');
+      setDate(defaultDate || getLocalTodayDateString());
+      setType('focus');
+    }
+  }, [isOpen, defaultDate, editData]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!title.trim()) return;
-    onSave({ title, time, type });
+    onSave({ title, time, date, type });
     onClose();
   };
 
@@ -138,6 +208,10 @@ const TaskModal = ({ isOpen, onClose, onSave }) => {
         <label className="field-label">
           Time
           <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+        </label>
+        <label className="field-label">
+          Date
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
         <button className="primary-button" type="submit">
           <CalendarCheck size={19} />

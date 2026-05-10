@@ -34,22 +34,21 @@ export const getDaysInMonth = () => {
   return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 };
 
-export const getCoachState = ({ weeklyStats, monthlyStats, todayStats, trackingStreak, tasks }) => {
+export const getCoachState = ({ weeklyStats, monthlyStats, todayStats, zeroDayStreak, tasks }) => {
+  const isFriday = new Date().getDay() === 5;
   const safeWeekly = Math.max(0, weeklyStats.remaining) / getDaysLeftInclusive(getWeekEnd());
   const safeMonthly = Math.max(0, monthlyStats.remaining) / getDaysLeftInclusive(getMonthEnd());
+  
   const monthProjection = (monthlyStats.total / getDaysPassedInclusive(getMonthStart())) * getDaysInMonth();
   const expectedMonthSpend =
     (monthlyStats.totalBudget / getDaysInMonth()) * getDaysPassedInclusive(getMonthStart());
   const paceGap = monthlyStats.total - expectedMonthSpend;
+  
   const biggestSector = weeklyStats.bySector.reduce(
     (leader, item) => (item.amount > leader.amount ? item : leader),
     weeklyStats.bySector[0]
   );
-  const riskSector = monthlyStats.bySector.find((item) => {
-    const monthProgress = getDaysPassedInclusive(getMonthStart()) / getDaysInMonth();
-    const expectedSectorSpend = item.budget * monthProgress;
-    return item.amount > expectedSectorSpend * 1.2 && item.amount > item.budget * 0.35;
-  });
+  
   const nextTask = tasks.find((task) => !task.done);
 
   let tone = 'steady';
@@ -57,7 +56,14 @@ export const getCoachState = ({ weeklyStats, monthlyStats, todayStats, trackingS
   let nudge = `Safe to spend: ${formatCurrency(safeWeekly)} per day this week.`;
   let icon = ShieldCheck;
 
-  if (weeklyStats.remaining < 0) {
+  // Friday Special: Weekly Streak Recap
+  if (isFriday) {
+    title = 'Weekly Streak Recap';
+    nudge = zeroDayStreak.streak > 0 
+      ? `Phenomenal! You hit ${zeroDayStreak.streak} zero-days this week. Keep pushing!`
+      : 'Friday check-in: Let\'s aim for a zero-day weekend to boost your streak.';
+    tone = zeroDayStreak.streak >= 2 ? 'win' : 'steady';
+  } else if (weeklyStats.remaining < 0) {
     tone = 'alert';
     title = 'Budget alert';
     icon = TrendingUp;
@@ -72,11 +78,11 @@ export const getCoachState = ({ weeklyStats, monthlyStats, todayStats, trackingS
     title = 'First action pending';
     icon = Leaf;
     nudge = nextTask ? `Start with "${nextTask.title}" or mark no-spend.` : 'Log one expense or mark no-spend today.';
-  } else if (trackingStreak >= 3) {
+  } else if (zeroDayStreak.active) {
     tone = 'win';
-    title = 'Habit streak active';
+    title = 'ZERO DAY active';
     icon = Flame;
-    nudge = `${trackingStreak} days tracked. Keep the rhythm clean.`;
+    nudge = `${zeroDayStreak.streak} streak days! Buffer active until ${zeroDayStreak.activeUntil}.`;
   }
 
   return {
@@ -89,7 +95,6 @@ export const getCoachState = ({ weeklyStats, monthlyStats, todayStats, trackingS
     monthProjection,
     biggestSector,
     biggestLabel: getSectorShortLabel(biggestSector?.sector),
-    riskSector,
     nextTask,
     monthlyPace: paceGap > 0 ? 'over' : 'under',
   };

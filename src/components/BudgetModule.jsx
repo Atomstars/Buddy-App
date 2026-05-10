@@ -18,6 +18,12 @@ import {
   TrendingDown,
   TrendingUp,
   UtensilsCrossed,
+  CarFront,
+  ShoppingBag,
+  Receipt,
+  HeartPulse,
+  Paperclip,
+  Apple,
 } from 'lucide-react';
 import { IconButton, Modal, ProgressBar } from './common';
 import { viewLabels, getDaysPassedInclusive } from '../utils/assistantLogic';
@@ -43,8 +49,14 @@ import {
 
 const sectorIcons = {
   groceries: ShoppingCart,
+  fruits: Apple,
   food: UtensilsCrossed,
+  transport: CarFront,
+  shopping: ShoppingBag,
+  bills: Receipt,
+  health: HeartPulse,
   fun: Sparkles,
+  other: Paperclip,
 };
 
 const CategoryCard = ({ item, period, onQuickAdd }) => {
@@ -83,6 +95,7 @@ const CategoryCard = ({ item, period, onQuickAdd }) => {
 
 export const BudgetModule = ({
   view,
+  setView,
   activeStats,
   todayStats,
   weeklyStats,
@@ -99,7 +112,7 @@ export const BudgetModule = ({
   onEdit,
   onDelete,
 }) => {
-  const [budgetPanel, setBudgetPanel] = useState('goals');
+  const [budgetPanel, setBudgetPanel] = useState('today');
   const displayTotal = view === 'today' ? todayStats.total : activeStats.total;
   const displayPercentage = view === 'today' ? 0 : activeStats.percentage;
   const categoryPeriod = view === 'month' ? 'month' : 'week';
@@ -132,6 +145,13 @@ export const BudgetModule = ({
 
         {budgetPanel === 'today' ? (
           <section className="section-block priority-budget">
+            <div className="segmented-control" aria-label="Budget view" style={{ marginBottom: '16px' }}>
+              {Object.entries(viewLabels).map(([id, label]) => (
+                <button key={id} className={view === id ? 'active' : ''} onClick={() => setView(id)}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="section-title">
               <div>
                 <p className="eyebrow">{viewLabels[view]} budget</p>
@@ -546,7 +566,7 @@ export const AddExpenseModal = ({ isOpen, onClose, onSave, defaultSector, editin
       <form className="modal-form" onSubmit={handleSubmit}>
         <div className="sector-picker" role="radiogroup" aria-label="Expense category">
           {SECTORS.map((item) => {
-            const Icon = sectorIcons[item.id];
+            const Icon = sectorIcons[item.id] || Paperclip;
             return (
               <button type="button" key={item.id} className={sector === item.id ? 'selected' : ''} onClick={() => setSector(item.id)}>
                 <Icon size={20} />
@@ -575,27 +595,73 @@ export const AddExpenseModal = ({ isOpen, onClose, onSave, defaultSector, editin
   );
 };
 
-export const SettingsModal = ({ isOpen, onClose, budgets, onUpdateBudget }) => {
+export const SettingsModal = ({ isOpen, onClose, budgets, onUpdateBudget, weeklyTarget, onUpdateWeeklyTarget, monthlyTarget, onUpdateMonthlyTarget }) => {
   const [draft, setDraft] = useState(budgets);
+  const [draftWeekly, setDraftWeekly] = useState(weeklyTarget || 0);
+  const [draftMonthly, setDraftMonthly] = useState(monthlyTarget || 0);
 
   useEffect(() => {
-    if (isOpen) setDraft(budgets);
-  }, [budgets, isOpen]);
+    if (isOpen) {
+      setDraft(budgets);
+      setDraftWeekly(weeklyTarget || 0);
+      setDraftMonthly(monthlyTarget || 0);
+    }
+  }, [budgets, weeklyTarget, monthlyTarget, isOpen]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
     SECTORS.forEach((sector) => onUpdateBudget(sector.id, draft[sector.id]));
+    if (onUpdateWeeklyTarget) onUpdateWeeklyTarget(draftWeekly);
+    if (onUpdateMonthlyTarget) onUpdateMonthlyTarget(draftMonthly);
     onClose();
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Settings">
       <form className="modal-form" onSubmit={handleSubmit}>
-        <p className="settings-note">Set monthly category budgets in rupees. The assistant uses these for alerts and pace.</p>
-        {SECTORS.map((sector) => {
-          const Icon = sectorIcons[sector.id];
-          return (
-            <label className="budget-row" key={sector.id}>
+        <p className="settings-note">Set monthly budgets. You can either set individual category targets OR a total monthly estimation.</p>
+        
+        <div className="settings-section">
+          <p className="eyebrow" style={{ marginTop: '16px' }}>Monthly Budget Estimation</p>
+          <label className="budget-row">
+            <span>
+              <PiggyBank size={18} />
+              Total Monthly Target
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="500"
+              value={draftMonthly}
+              onChange={(event) => setDraftMonthly(parseCurrencyInput(event.target.value))}
+            />
+          </label>
+          <p className="settings-note" style={{ marginTop: '4px', fontSize: '0.75rem' }}>If set, this overrides the sum of category budgets for monthly pace.</p>
+        </div>
+
+        <div className="settings-section" style={{ marginTop: '16px' }}>
+          <p className="eyebrow">Weekly Target</p>
+          <label className="budget-row">
+            <span>
+              <Target size={18} />
+              Explicit Weekly Target
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="100"
+              value={draftWeekly}
+              onChange={(event) => setDraftWeekly(parseCurrencyInput(event.target.value))}
+            />
+          </label>
+        </div>
+
+        <div className="settings-section" style={{ marginTop: '16px' }}>
+          <p className="eyebrow">Monthly Category Budgets</p>
+          {SECTORS.map((sector) => {
+            const Icon = sectorIcons[sector.id] || Paperclip;
+            return (
+              <label className="budget-row" key={sector.id}>
               <span>
                 <Icon size={18} />
                 {sector.label}
@@ -608,11 +674,12 @@ export const SettingsModal = ({ isOpen, onClose, budgets, onUpdateBudget }) => {
                 onChange={(event) => setDraft((current) => ({ ...current, [sector.id]: parseCurrencyInput(event.target.value) }))}
               />
             </label>
-          );
-        })}
-        <button className="primary-button" type="submit">
+            );
+          })}
+        </div>
+        <button className="primary-button" type="submit" style={{ marginTop: '16px' }}>
           <Check size={19} />
-          Save budgets
+          Save settings
         </button>
       </form>
     </Modal>
