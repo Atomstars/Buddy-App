@@ -107,3 +107,12 @@ export const getDateFromISO = (isoString) => {
   const [year, month, day] = isoString.split('-').map(Number);
   return new Date(year, month - 1, day);
 };
+
+export const isPast = (date) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  return target < today;
+};
+

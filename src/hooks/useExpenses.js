@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { supabase } from '../utils/supabaseClient';
 import { generateId, INR_CURRENCY, SECTORS } from '../utils/formatters';
 import {
   formatDateISO,
   getDateFromISO,
   getMonthStart,
+  getMonthEnd,
   getWeekEnd,
   getWeekStart,
   isSameDay,
 } from '../utils/dateUtils';
 
-const STORAGE_KEY = 'cell-budget-tracker';
+const STORAGE_KEY_NO_SPEND = 'cell-budget-tracker-nospend';
 
 export const defaultBudgets = {
   groceries: 5000,
@@ -17,86 +19,13 @@ export const defaultBudgets = {
   fun: 2000,
 };
 
-const legacyDefaultBudgets = {
-  groceries: 500,
-  food: 300,
-  fun: 200,
-};
-
-const defaultState = {
-  expenses: [],
-  budgets: defaultBudgets,
-  weeklyTarget: 0,
-  monthlyTarget: 0,
-  currency: INR_CURRENCY,
-  noSpendDays: [],
-};
-
-const isBrowser = () => typeof window !== 'undefined' && Boolean(window.localStorage);
-
-const normalizeBudgets = (saved = {}) => {
-  const incoming = saved.budgets || {};
-  const isLegacyDefault =
-    saved.currency === 'USD' &&
-    incoming.groceries === legacyDefaultBudgets.groceries &&
-    incoming.food === legacyDefaultBudgets.food &&
-    incoming.fun === legacyDefaultBudgets.fun;
-
-  if (isLegacyDefault) return defaultBudgets;
-
-  return SECTORS.reduce((budgets, sector) => {
-    const amount = Number(incoming[sector.id]);
-    budgets[sector.id] = Number.isFinite(amount) && amount > 0 ? amount : defaultBudgets[sector.id];
-    return budgets;
-  }, {});
-};
-
-const normalizeState = (saved) => {
-  if (!saved || typeof saved !== 'object') return defaultState;
-
-  const expenses = Array.isArray(saved.expenses)
-    ? saved.expenses
-        .filter((expense) => expense && Number(expense.amount) > 0)
-        .map((expense) => ({
-          id: expense.id || generateId(),
-          amount: Number(expense.amount),
-          sector: SECTORS.some((sector) => sector.id === expense.sector) ? expense.sector : 'groceries',
-          note: expense.note || '',
-          date: expense.date || new Date().toISOString(),
-          createdAt: expense.createdAt || Date.now(),
-        }))
-        .sort((a, b) => b.createdAt - a.createdAt)
-    : [];
-
-  const noSpendDays = Array.isArray(saved.noSpendDays)
-    ? [...new Set(saved.noSpendDays.filter(Boolean))]
-    : [];
-
-  return {
-    expenses,
-    budgets: normalizeBudgets(saved),
-    weeklyTarget: typeof saved.weeklyTarget === 'number' ? saved.weeklyTarget : 0,
-    monthlyTarget: typeof saved.monthlyTarget === 'number' ? saved.monthlyTarget : 0,
-    currency: INR_CURRENCY,
-    noSpendDays,
-  };
-};
-
-const loadInitialState = () => {
-  if (!isBrowser()) return defaultState;
-
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved ? normalizeState(JSON.parse(saved)) : defaultState;
-  } catch {
-    return defaultState;
-  }
-};
-
-const getRangeExpenses = (expenses, start, end = new Date()) => {
+export const getRangeExpenses = (expenses, start, end) => {
   return expenses.filter((expense) => {
     const expenseDate = new Date(expense.date);
-    return expenseDate >= start && expenseDate <= end;
+    if (end) {
+      return expenseDate >= start && expenseDate <= end;
+    }
+    return expenseDate >= start;
   });
 };
 
@@ -118,9 +47,10 @@ const getPeriodBudget = (budgets, period) => {
   }, {});
 };
 
-const getCurrentPeriodStats = (expenses, budgets, period, weeklyTarget = 0, monthlyTarget = 0) => {
-  const start = period === 'month' ? getMonthStart() : getWeekStart();
-  const scoped = getRangeExpenses(expenses, start);
+const getCurrentPeriodStats = (expenses, budgets, period, targetDate, weeklyTarget = 0, monthlyTarget = 0) => {
+  const start = period === 'month' ? getMonthStart(targetDate) : getWeekStart(targetDate);
+  const end = period === 'month' ? getMonthEnd(targetDate) : getWeekEnd(targetDate);
+  const scoped = getRangeExpenses(expenses, start, end);
   const total = sumExpenses(scoped);
   const periodBudgets = getPeriodBudget(budgets, period);
   let totalBudget = Object.values(periodBudgets).reduce((sum, amount) => sum + amount, 0);
@@ -146,16 +76,10 @@ const getCurrentPeriodStats = (expenses, budgets, period, weeklyTarget = 0, mont
   };
 };
 
-const getTrackingDates = (expenses, noSpendDays) => {
-  const expenseDays = expenses.map((expense) => formatDateISO(new Date(expense.date)));
-  return new Set([...expenseDays, ...noSpendDays]);
-};
-
 const getZeroDayStreak = (expenses, noSpendDays) => {
   const allNoSpendDates = [...noSpendDays].sort().reverse();
   const expenseDates = new Set(expenses.map(e => formatDateISO(new Date(e.date))));
   
-  // A day is truly "zero" if it's in noSpendDays AND has no expenses
   const trueZeroDays = allNoSpendDates.filter(day => !expenseDates.has(day));
   
   if (trueZeroDays.length === 0) return { streak: 0, active: false };
@@ -164,12 +88,10 @@ const getZeroDayStreak = (expenses, noSpendDays) => {
   const today = new Date();
   today.setHours(0,0,0,0);
   
-  // Find the most recent zero-day run
   let latestZeroDate = null;
   let streakCount = 0;
   let cursor = new Date(today);
 
-  // Find if we are currently in or just after a streak
   while (cursor >= new Date(2020, 0, 1)) {
     const dateStr = formatDateISO(cursor);
     const isZero = trueZeroDays.includes(dateStr);
@@ -178,7 +100,6 @@ const getZeroDayStreak = (expenses, noSpendDays) => {
       if (!latestZeroDate) latestZeroDate = new Date(cursor);
       streakCount++;
     } else if (latestZeroDate) {
-      // Streak ended at this cursor
       break;
     }
     cursor.setDate(cursor.getDate() - 1);
@@ -186,15 +107,11 @@ const getZeroDayStreak = (expenses, noSpendDays) => {
 
   if (streakCount === 0) return { streak: 0, active: false };
 
-  // Logic: N zero days = N + 1 days active window from the START of the streak
-  // But wait, the user says "monday no spend -> active Mon & Tue".
-  // "consecutive 2 streaks -> 3 days active".
-  // So Window = [StartOfStreakDate, StartOfStreakDate + N + 1 days]
   const streakStartDate = new Date(latestZeroDate);
   streakStartDate.setDate(streakStartDate.getDate() - (streakCount - 1));
   
   const activeUntil = new Date(streakStartDate);
-  activeUntil.setDate(activeUntil.getDate() + streakCount); // N zero days gives N+1 days inclusive
+  activeUntil.setDate(activeUntil.getDate() + streakCount); 
 
   const isActive = today <= activeUntil;
 
@@ -228,152 +145,209 @@ const getBudgetStreak = (expenses, budgets) => {
 };
 
 export const useExpenses = () => {
-  const [state, setState] = useState(loadInitialState);
+  const [expenses, setExpenses] = useState([]);
+  const [budgets, setBudgets] = useState(defaultBudgets);
+  const [weeklyTarget, setWeeklyTarget] = useState(0);
+  const [monthlyTarget, setMonthlyTarget] = useState(0);
+  const [noSpendDays, setNoSpendDays] = useState([]);
+  const currency = INR_CURRENCY;
+
+  const fetchSupabaseData = async () => {
+    try {
+      const { data: expData } = await supabase.from('expenses').select('*').order('date', { ascending: false });
+      if (expData) {
+        setExpenses(expData.map(e => ({
+          id: e.id,
+          amount: Number(e.amount),
+          sector: e.sector,
+          note: e.note || '',
+          date: new Date(e.date + 'T12:00:00Z').toISOString(), // Fix timezone offset for dates
+          createdAt: new Date(e.created_at).getTime()
+        })));
+      }
+
+      const { data: bdgData } = await supabase.from('budgets').select('*');
+      if (bdgData && bdgData.length > 0) {
+        const newBudgets = { ...defaultBudgets };
+        bdgData.forEach(b => {
+          newBudgets[b.sector] = Number(b.amount);
+        });
+        setBudgets(newBudgets);
+      }
+
+      const { data: tgtData } = await supabase.from('targets').select('*');
+      if (tgtData) {
+        const wTgt = tgtData.find(t => t.type === 'weekly');
+        if (wTgt) setWeeklyTarget(Number(wTgt.amount));
+        const mTgt = tgtData.find(t => t.type === 'monthly');
+        if (mTgt) setMonthlyTarget(Number(mTgt.amount));
+      }
+
+      const savedNoSpend = window.localStorage.getItem(STORAGE_KEY_NO_SPEND);
+      if (savedNoSpend) {
+        setNoSpendDays(JSON.parse(savedNoSpend));
+      }
+    } catch (err) {
+      console.error('Failed to fetch from supabase', err);
+    }
+  };
 
   useEffect(() => {
-    if (!isBrowser()) return;
+    fetchSupabaseData();
+  }, []);
 
+  useEffect(() => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      window.localStorage.setItem(STORAGE_KEY_NO_SPEND, JSON.stringify(noSpendDays));
     } catch {
-      // Storage can fail in private mode; the app should still work for the session.
+      // Ignore
     }
-  }, [state]);
+  }, [noSpendDays]);
 
-  const addExpense = useCallback((amount, sector, note = '', date = new Date()) => {
-    const expense = {
-      id: generateId(),
-      amount: Number(amount),
+  const addExpense = useCallback(async (amount, sector, note = '', date = new Date()) => {
+    const numAmount = Number(amount);
+    const newExp = {
+      amount: numAmount,
       sector,
       note: note.trim(),
-      date: date.toISOString(),
-      createdAt: Date.now(),
+      date: formatDateISO(date)
     };
 
-    setState((previous) => ({
-      ...previous,
-      expenses: [expense, ...previous.expenses],
-      noSpendDays: previous.noSpendDays.filter((day) => day !== formatDateISO(date)),
-    }));
-
-    return expense;
+    const { data, error } = await supabase.from('expenses').insert([newExp]).select();
+    if (error) {
+      console.error('Error adding expense:', error);
+    }
+    if (!error && data) {
+      const added = {
+        id: data[0].id,
+        amount: Number(data[0].amount),
+        sector: data[0].sector,
+        note: data[0].note || '',
+        date: new Date(data[0].date + 'T12:00:00Z').toISOString(),
+        createdAt: new Date(data[0].created_at).getTime()
+      };
+      setExpenses((prev) => [added, ...prev].sort((a,b) => b.createdAt - a.createdAt));
+      setNoSpendDays((prev) => prev.filter((day) => day !== formatDateISO(date)));
+      return added;
+    }
   }, []);
 
-  const updateExpense = useCallback((id, updates) => {
-    setState((previous) => ({
-      ...previous,
-      expenses: previous.expenses.map((expense) =>
-        expense.id === id
-          ? {
-              ...expense,
-              ...updates,
-              amount: Number(updates.amount ?? expense.amount),
-              note: updates.note ?? expense.note,
-            }
-          : expense
-      ),
-    }));
+  const updateExpense = useCallback(async (id, updates) => {
+    const dbUpdates = {};
+    if (updates.amount !== undefined) dbUpdates.amount = Number(updates.amount);
+    if (updates.sector !== undefined) dbUpdates.sector = updates.sector;
+    if (updates.note !== undefined) dbUpdates.note = updates.note;
+    if (updates.date !== undefined) dbUpdates.date = formatDateISO(new Date(updates.date));
+
+    const { error } = await supabase.from('expenses').update(dbUpdates).eq('id', id);
+    if (!error) {
+      setExpenses((prev) => prev.map((exp) => (exp.id === id ? { ...exp, ...updates, amount: Number(updates.amount ?? exp.amount) } : exp)));
+    }
   }, []);
 
-  const removeExpense = useCallback((id) => {
-    setState((previous) => ({
-      ...previous,
-      expenses: previous.expenses.filter((expense) => expense.id !== id),
-    }));
+  const removeExpense = useCallback(async (id) => {
+    const { error } = await supabase.from('expenses').delete().eq('id', id);
+    if (!error) {
+      setExpenses((prev) => prev.filter((exp) => exp.id !== id));
+    }
   }, []);
 
-  const updateBudget = useCallback((sector, amount) => {
-    setState((previous) => ({
-      ...previous,
-      budgets: {
-        ...previous.budgets,
-        [sector]: Math.max(0, Number(amount) || 0),
-      },
-    }));
+  const updateBudget = useCallback(async (sector, amount) => {
+    const numAmount = Math.max(0, Number(amount) || 0);
+    
+    // First try to select to see if it exists
+    const { data } = await supabase.from('budgets').select('id').eq('sector', sector);
+    if (data && data.length > 0) {
+      await supabase.from('budgets').update({ amount: numAmount }).eq('sector', sector);
+    } else {
+      await supabase.from('budgets').insert([{ sector, amount: numAmount }]);
+    }
+    
+    setBudgets((prev) => ({ ...prev, [sector]: numAmount }));
   }, []);
 
-  const updateWeeklyTarget = useCallback((amount) => {
-    setState((previous) => ({
-      ...previous,
-      weeklyTarget: Math.max(0, Number(amount) || 0),
-    }));
+  const updateWeeklyTarget = useCallback(async (amount) => {
+    const numAmount = Math.max(0, Number(amount) || 0);
+    const { data } = await supabase.from('targets').select('id').eq('type', 'weekly');
+    if (data && data.length > 0) {
+      await supabase.from('targets').update({ amount: numAmount }).eq('type', 'weekly');
+    } else {
+      await supabase.from('targets').insert([{ type: 'weekly', amount: numAmount }]);
+    }
+    setWeeklyTarget(numAmount);
   }, []);
 
-  const updateMonthlyTarget = useCallback((amount) => {
-    setState((previous) => ({
-      ...previous,
-      monthlyTarget: Math.max(0, Number(amount) || 0),
-    }));
+  const updateMonthlyTarget = useCallback(async (amount) => {
+    const numAmount = Math.max(0, Number(amount) || 0);
+    const { data } = await supabase.from('targets').select('id').eq('type', 'monthly');
+    if (data && data.length > 0) {
+      await supabase.from('targets').update({ amount: numAmount }).eq('type', 'monthly');
+    } else {
+      await supabase.from('targets').insert([{ type: 'monthly', amount: numAmount }]);
+    }
+    setMonthlyTarget(numAmount);
   }, []);
 
   const markNoSpendToday = useCallback(() => {
     const today = formatDateISO(new Date());
-
-    setState((previous) => ({
-      ...previous,
-      noSpendDays: previous.noSpendDays.includes(today)
-        ? previous.noSpendDays
-        : [today, ...previous.noSpendDays],
-    }));
+    setNoSpendDays((prev) => prev.includes(today) ? prev : [today, ...prev]);
   }, []);
 
   const clearNoSpendToday = useCallback(() => {
     const today = formatDateISO(new Date());
-
-    setState((previous) => ({
-      ...previous,
-      noSpendDays: previous.noSpendDays.filter((day) => day !== today),
-    }));
+    setNoSpendDays((prev) => prev.filter((day) => day !== today));
   }, []);
 
   const selectors = useMemo(() => {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(todayStart);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const todayExpenses = state.expenses.filter((expense) => {
-      const date = new Date(expense.date);
-      return date >= todayStart && date < tomorrow;
-    });
-
     return {
-      getTodayStats: () => ({
-        total: sumExpenses(todayExpenses),
-        count: todayExpenses.length,
-        expenses: todayExpenses,
-        noSpendMarked: state.noSpendDays.includes(formatDateISO(new Date())),
-      }),
-      getWeeklyStats: () => getCurrentPeriodStats(state.expenses, state.budgets, 'week', state.weeklyTarget),
-      getMonthlyStats: () => getCurrentPeriodStats(state.expenses, state.budgets, 'month', 0, state.monthlyTarget),
-      getSpendingBySector: (sector) => ({
+      getTodayStats: (targetDate = new Date()) => {
+        const todayStart = new Date(targetDate);
+        todayStart.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(todayStart);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const todayExpenses = expenses.filter((expense) => {
+          const date = new Date(expense.date);
+          return date >= todayStart && date < tomorrow;
+        });
+
+        return {
+          total: sumExpenses(todayExpenses),
+          count: todayExpenses.length,
+          expenses: todayExpenses,
+          noSpendMarked: noSpendDays.includes(formatDateISO(todayStart)),
+        };
+      },
+      getWeeklyStats: (targetDate = new Date()) => getCurrentPeriodStats(expenses, budgets, 'week', targetDate, weeklyTarget),
+      getMonthlyStats: (targetDate = new Date()) => getCurrentPeriodStats(expenses, budgets, 'month', targetDate, 0, monthlyTarget),
+      getSpendingBySector: (sector, targetDate = new Date()) => ({
         week: sumExpenses(
-          getRangeExpenses(state.expenses, getWeekStart()).filter((expense) => expense.sector === sector)
+          getRangeExpenses(expenses, getWeekStart(targetDate), getWeekEnd(targetDate)).filter((expense) => expense.sector === sector)
         ),
         month: sumExpenses(
-          getRangeExpenses(state.expenses, getMonthStart()).filter((expense) => expense.sector === sector)
+          getRangeExpenses(expenses, getMonthStart(targetDate), getMonthEnd(targetDate)).filter((expense) => expense.sector === sector)
         ),
-        count: state.expenses.filter((expense) => expense.sector === sector).length,
+        count: expenses.filter((expense) => expense.sector === sector).length,
       }),
-      getZeroDayStreak: () => getZeroDayStreak(state.expenses, state.noSpendDays),
-      getBudgetStreak: () => getBudgetStreak(state.expenses, state.budgets),
+      getZeroDayStreak: () => getZeroDayStreak(expenses, noSpendDays),
+      getBudgetStreak: () => getBudgetStreak(expenses, budgets),
       isDateTracked: (date) => {
         const day = formatDateISO(date);
         return (
-          state.noSpendDays.includes(day) ||
-          state.expenses.some((expense) => isSameDay(new Date(expense.date), getDateFromISO(day)))
+          noSpendDays.includes(day) ||
+          expenses.some((expense) => isSameDay(new Date(expense.date), getDateFromISO(day)))
         );
       },
     };
-  }, [state]);
+  }, [expenses, budgets, weeklyTarget, monthlyTarget, noSpendDays]);
 
   return {
-    expenses: state.expenses,
-    budgets: state.budgets,
-    weeklyTarget: state.weeklyTarget,
-    monthlyTarget: state.monthlyTarget,
-    currency: state.currency,
-    noSpendDays: state.noSpendDays,
+    expenses,
+    budgets,
+    weeklyTarget,
+    monthlyTarget,
+    currency,
+    noSpendDays,
     addExpense,
     updateExpense,
     removeExpense,

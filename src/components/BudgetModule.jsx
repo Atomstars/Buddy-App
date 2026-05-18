@@ -26,6 +26,8 @@ import {
   Apple,
 } from 'lucide-react';
 import { IconButton, Modal, ProgressBar } from './common';
+import { CategoryInsights } from './CategoryInsights';
+import { AnalyticsPanel } from './AnalyticsPanel';
 import { viewLabels, getDaysPassedInclusive } from '../utils/assistantLogic';
 import {
   SECTORS,
@@ -38,6 +40,7 @@ import {
 import {
   formatDate,
   formatDateISO,
+  getDateFromISO,
   getDayName,
   getDaysInWeek,
   getMonthStart,
@@ -111,39 +114,62 @@ export const BudgetModule = ({
   onQuickAdd,
   onEdit,
   onDelete,
+  selectedDate,
 }) => {
   const [budgetPanel, setBudgetPanel] = useState('today');
   const displayTotal = view === 'today' ? todayStats.total : activeStats.total;
   const displayPercentage = view === 'today' ? 0 : activeStats.percentage;
   const categoryPeriod = view === 'month' ? 'month' : 'week';
 
+  const filteredExpenses = React.useMemo(() => {
+    if (view === 'today') return todayStats.expenses;
+    return activeStats.expenses;
+  }, [view, todayStats.expenses, activeStats.expenses]);
+
   return (
     <motion.div className="module-stack" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <section className="budget-stage">
-        <div className="budget-tabs" aria-label="Budget sections">
-          {[
-            ['goals', 'Goals'],
-            ['today', "Today's Budget"],
-            ['widgets', 'Widgets'],
-          ].map(([id, label]) => (
-            <button key={id} className={budgetPanel === id ? 'active' : ''} onClick={() => setBudgetPanel(id)}>
-              {label}
-            </button>
-          ))}
-        </div>
+        {isToday(selectedDate) && (
+          <div className="budget-tabs" aria-label="Budget sections">
+            {[
+              ['history', 'History'],
+              ['today', "Budget"],
+              ['analytics', 'Data Insights'],
+            ].map(([id, label]) => (
+              <button key={id} className={budgetPanel === id ? 'active' : ''} onClick={() => {
+                setBudgetPanel(id);
+                if (id === 'history' && view === 'categories') {
+                  setView('week'); // Reset view when navigating to history
+                }
+              }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {budgetPanel === 'goals' ? (
-          <GoalsPanel
-            goals={goals}
-            goalSummary={goalSummary}
-            monthlyRemaining={monthlyRemaining}
-            onAddGoal={onAddGoal}
-            onFundGoal={onFundGoal}
-            onDeleteGoal={onDeleteGoal}
-          />
+        {(budgetPanel === 'history' || !isToday(selectedDate)) ? (
+          view === 'categories' ? (
+            <CategoryInsights activeStats={monthlyStats} expenses={expenses} onBack={() => setView('week')} />
+          ) : (
+            <HistoryPanel 
+              expenses={filteredExpenses} 
+              allExpenses={expenses}
+              monthlyStats={monthlyStats} 
+              weeklyStats={weeklyStats}
+              onEdit={onEdit} 
+              onDelete={onDelete}
+              onCategoryClick={() => setView('categories')} 
+              selectedDate={selectedDate}
+            />
+          )
         ) : null}
 
-        {budgetPanel === 'today' ? (
+        {(budgetPanel === 'analytics' && isToday(selectedDate)) ? (
+          <AnalyticsPanel expenses={expenses} selectedDate={selectedDate} />
+        ) : null}
+
+        {(budgetPanel === 'today' && isToday(selectedDate)) ? (
           <section className="section-block priority-budget">
             <div className="segmented-control" aria-label="Budget view" style={{ marginBottom: '16px' }}>
               {Object.entries(viewLabels).map(([id, label]) => (
@@ -186,274 +212,99 @@ export const BudgetModule = ({
           </section>
         ) : null}
 
-        {budgetPanel === 'widgets' ? (
-          <InsightPanel coach={coach} weeklyStats={weeklyStats} monthlyStats={monthlyStats} />
-        ) : null}
       </section>
-
-      {budgetPanel === 'today' && view === 'week' ? <WeeklyBars stats={weeklyStats} /> : null}
-      <Transactions expenses={expenses} onEdit={onEdit} onDelete={onDelete} />
     </motion.div>
   );
 };
 
-const GoalsPanel = ({ goals, goalSummary, monthlyRemaining, onAddGoal, onFundGoal, onDeleteGoal }) => {
-  const [showGoalModal, setShowGoalModal] = useState(false);
-  const [fundingGoal, setFundingGoal] = useState(null);
-  const overallPercent = getPercentage(goalSummary.saved, goalSummary.target);
-  const monthStart = getMonthStart();
-  const transferredThisMonth = goals.reduce(
-    (sum, goal) =>
-      sum +
-      goal.entries
-        .filter((entry) => entry.source === 'monthly-remaining' && new Date(entry.date) >= monthStart)
-        .reduce((entrySum, entry) => entrySum + entry.amount, 0),
-    0
-  );
-  const availableMonthly = Math.max(0, monthlyRemaining - transferredThisMonth);
+const HistoryPanel = ({ expenses, allExpenses, monthlyStats, weeklyStats, onEdit, onDelete, onCategoryClick, selectedDate }) => {
+  const [showAll, setShowAll] = useState(false);
+  const displayExpenses = showAll ? allExpenses : expenses;
+  const sortedExpenses = [...displayExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return (
-    <section className="goals-panel">
-      <div className="goals-hero">
-        <div>
-          <p className="eyebrow">Savings goals</p>
-          <h2>{formatCurrency(goalSummary.saved)} saved</h2>
-          <p>
-            {goalSummary.count} active {goalSummary.count === 1 ? 'goal' : 'goals'} • {formatCurrency(goalSummary.remaining)} left
-          </p>
-        </div>
-        <div className="goal-ring">
-          <span>{overallPercent}%</span>
-          <small>funded</small>
-        </div>
+    <section className="history-panel animate-fade-in">
+      <div style={{ marginBottom: '24px' }}>
+         <WeeklyBars stats={weeklyStats} selectedDate={selectedDate} />
       </div>
 
-      <div className="goal-actions">
-        <button className="primary-button inline" onClick={() => setShowGoalModal(true)}>
-          <Plus size={18} />
-          Add goal
-        </button>
-        <div>
-          <strong>{formatCurrency(availableMonthly)}</strong>
-          <span>available from this month</span>
+      <button className="category-summary-btn" onClick={onCategoryClick}>
+        <div className="category-summary-left">
+          <div className="category-summary-icon">
+            <BarChart3 size={20} />
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <strong>Category Breakdown</strong>
+            <p>Analyze spending by sector</p>
+          </div>
         </div>
-      </div>
+        <ChevronRight size={20} />
+      </button>
 
-      <div className="goal-grid">
-        {goals.map((goal) => (
-          <GoalCard
-            key={goal.id}
-            goal={goal}
-            monthlyRemaining={availableMonthly}
-            onFund={() => setFundingGoal(goal)}
-            onFundFromRemaining={() => {
-              const need = Math.max(0, goal.targetAmount - goal.currentAmount);
-              onFundGoal(goal.id, Math.min(availableMonthly, need), 'monthly-remaining');
-            }}
-            onDelete={() => onDeleteGoal(goal.id)}
-          />
-        ))}
-      </div>
-
-      <GoalModal isOpen={showGoalModal} onClose={() => setShowGoalModal(false)} onSave={onAddGoal} />
-      <FundGoalModal
-        goal={fundingGoal}
-        isOpen={Boolean(fundingGoal)}
-        onClose={() => setFundingGoal(null)}
-        onSave={(amount) => onFundGoal(fundingGoal.id, amount, 'manual')}
-      />
-    </section>
-  );
-};
-
-const GoalCard = ({ goal, monthlyRemaining, onFund, onFundFromRemaining, onDelete }) => {
-  const percent = getPercentage(goal.currentAmount, goal.targetAmount);
-  const remaining = Math.max(0, goal.targetAmount - goal.currentAmount);
-  const daysLeft = Math.max(1, Math.ceil((new Date(goal.deadline) - new Date()) / 86400000));
-  const perDay = remaining / daysLeft;
-
-  return (
-    <article className="goal-card">
-      <div className="goal-card-head">
-        <span className="goal-icon">
-          <PiggyBank size={21} />
-        </span>
-        <div>
-          <h3>{goal.title}</h3>
-          <p>Target {formatCurrency(goal.targetAmount)} by {formatDate(new Date(goal.deadline))}</p>
-        </div>
-        <IconButton label="Delete goal" className="danger" onClick={onDelete}>
-          <Trash2 size={16} />
-        </IconButton>
-      </div>
-      <ProgressBar value={percent} tone={percent >= 100 ? 'normal' : percent < 35 ? 'watch' : 'normal'} />
-      <div className="goal-card-stats">
-        <div>
-          <span>Saved</span>
-          <strong>{formatCurrency(goal.currentAmount)}</strong>
-        </div>
-        <div>
-          <span>Needed/day</span>
-          <strong>{formatCurrency(perDay)}</strong>
-        </div>
-      </div>
-      <div className="goal-card-actions">
-        <button onClick={onFund}>Manual add</button>
-        <button disabled={monthlyRemaining <= 0 || remaining <= 0} onClick={onFundFromRemaining}>
-          Move remaining
-        </button>
-      </div>
-    </article>
-  );
-};
-
-const GoalModal = ({ isOpen, onClose, onSave }) => {
-  const nextMonth = new Date();
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-  const [title, setTitle] = useState('');
-  const [targetAmount, setTargetAmount] = useState('');
-  const [currentAmount, setCurrentAmount] = useState('');
-  const [deadline, setDeadline] = useState(formatDateISO(nextMonth));
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setTitle('');
-    setTargetAmount('');
-    setCurrentAmount('');
-    setDeadline(formatDateISO(nextMonth));
-  }, [isOpen]);
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const target = parseCurrencyInput(targetAmount);
-    if (!title.trim() || target <= 0) return;
-    onSave({
-      title,
-      targetAmount: target,
-      currentAmount: parseCurrencyInput(currentAmount),
-      deadline,
-    });
-    onClose();
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add savings goal">
-      <form className="modal-form" onSubmit={handleSubmit}>
-        <label className="field-label">
-          Goal name
-          <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Car, phone, trip..." autoFocus />
-        </label>
-        <label className="field-label">
-          Target amount
-          <input type="number" min="0" step="100" value={targetAmount} onChange={(event) => setTargetAmount(event.target.value)} placeholder="30000" />
-        </label>
-        <label className="field-label">
-          Already saved
-          <input type="number" min="0" step="100" value={currentAmount} onChange={(event) => setCurrentAmount(event.target.value)} placeholder="0" />
-        </label>
-        <label className="field-label">
-          Deadline
-          <input type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} />
-        </label>
-        <button className="primary-button" type="submit">
-          <PiggyBank size={19} />
-          Create goal
-        </button>
-      </form>
-    </Modal>
-  );
-};
-
-const FundGoalModal = ({ goal, isOpen, onClose, onSave }) => {
-  const [amount, setAmount] = useState('');
-
-  useEffect(() => {
-    if (isOpen) setAmount('');
-  }, [isOpen]);
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const parsed = parseCurrencyInput(amount);
-    if (parsed <= 0) return;
-    onSave(parsed);
-    onClose();
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Add savings${goal ? ` to ${goal.title}` : ''}`}>
-      <form className="modal-form" onSubmit={handleSubmit}>
-        <label className="field-label">
-          Amount saved
-          <span className="amount-field">
-            <span>₹</span>
-            <input inputMode="decimal" type="number" min="0" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0" autoFocus />
-          </span>
-        </label>
-        <button className="primary-button" type="submit">
-          <IndianRupee size={19} />
-          Add to goal
-        </button>
-      </form>
-    </Modal>
-  );
-};
-
-const InsightPanel = ({ coach, weeklyStats, monthlyStats }) => {
-  const biggestLabel = getSectorShortLabel(coach.biggestSector?.sector);
-  const biggestAmount = coach.biggestSector?.amount || 0;
-  const dailyAverage = monthlyStats.total / getDaysPassedInclusive(getMonthStart());
-  const riskLabel = coach.riskSector ? getSectorShortLabel(coach.riskSector.sector) : null;
-
-  const insights = [
-    {
-      icon: BarChart3,
-      label: 'Biggest this week',
-      value: biggestAmount > 0 ? `${biggestLabel} at ${formatCurrency(biggestAmount)}` : 'No spending yet',
-    },
-    {
-      icon: coach.monthlyPace === 'over' ? TrendingUp : TrendingDown,
-      label: 'Monthly pace',
-      value: `${formatCurrency(coach.monthProjection)} projected`,
-    },
-    {
-      icon: Target,
-      label: 'Daily average',
-      value: `${formatCurrency(dailyAverage)} this month`,
-    },
-    {
-      icon: riskLabel ? Coffee : ShieldCheck,
-      label: riskLabel ? 'Category watch' : 'Category health',
-      value: riskLabel ? `${riskLabel} may cross its budget` : 'No category risk right now',
-    },
-  ];
-
-  return (
-    <section className="section-block">
-      <div className="section-title">
-        <div>
-          <p className="eyebrow">Smart insights</p>
-          <h2>Signals that matter</h2>
-        </div>
-        <span>{weeklyStats.expenses.length} week entries</span>
-      </div>
-      <div className="insight-grid">
-        {insights.map((insight) => {
-          const Icon = insight.icon;
-          return (
-            <div className="insight-card" key={insight.label}>
-              <Icon size={19} />
-              <span>{insight.label}</span>
-              <strong>{insight.value}</strong>
+      <div className="section-block" style={{ marginTop: '24px' }}>
+        <div className="section-title">
+          <div>
+            <p className="eyebrow">Transaction Log</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h2>History</h2>
+              <select 
+                value={showAll ? 'all' : 'period'} 
+                onChange={(e) => setShowAll(e.target.value === 'all')}
+                className="analytics-select"
+                style={{ fontSize: '0.8rem', padding: '4px 24px 4px 8px', height: 'auto', background: 'var(--panel-strong)' }}
+              >
+                <option value="period">{!isToday(selectedDate) ? 'This Day' : 'Recent'}</option>
+                <option value="all">All Time</option>
+              </select>
             </div>
-          );
-        })}
+          </div>
+          <span>{sortedExpenses.length} entries</span>
+        </div>
+        
+        {sortedExpenses.length === 0 ? (
+          <div className="empty-state">
+            <Receipt size={32} />
+            <strong>No history yet</strong>
+          </div>
+        ) : (
+          <div className="transaction-list">
+            {sortedExpenses.map((expense) => {
+              const sector = getSector(expense.sector);
+              const Icon = sectorIcons[expense.sector] || Paperclip;
+              const date = new Date(expense.date);
+              return (
+                <article className="transaction-item" key={expense.id}>
+                  <button className="transaction-main" onClick={() => onEdit(expense)}>
+                    <span className="transaction-icon" style={{ color: sector.color, backgroundColor: `${sector.color}18`, padding: '8px', borderRadius: '50%' }}>
+                      <Icon size={18} />
+                    </span>
+                    <span className="transaction-copy">
+                      <strong>{sector.shortLabel}</strong>
+                      <small>{expense.note || 'No note'}</small>
+                    </span>
+                    <span className="transaction-amount" style={{ textAlign: 'right' }}>
+                      <strong>-{formatCurrency(expense.amount)}</strong>
+                      <small>{formatDate(date)}</small>
+                    </span>
+                  </button>
+                  <div className="transaction-actions">
+                    <IconButton label="Delete transaction" className="danger" onClick={() => onDelete(expense.id)}>
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
 };
 
-const WeeklyBars = ({ stats }) => {
-  const days = getDaysInWeek(getWeekStart());
+const WeeklyBars = ({ stats, selectedDate }) => {
+  const targetDate = selectedDate || new Date();
+  const days = getDaysInWeek(getWeekStart(targetDate));
   const getDayTotal = (day) =>
     stats.expenses
       .filter((expense) => new Date(expense.date).toDateString() === day.toDateString())
@@ -467,7 +318,7 @@ const WeeklyBars = ({ stats }) => {
           <p className="eyebrow">Week rhythm</p>
           <h2>Daily breakdown</h2>
         </div>
-        <span>{formatDate(getWeekStart())} to {formatDate(getWeekEnd())}</span>
+        <span>{formatDate(getWeekStart(targetDate))} to {formatDate(getWeekEnd(targetDate))}</span>
       </div>
       <div className="weekly-bars">
         {days.map((day) => {
@@ -489,75 +340,25 @@ const WeeklyBars = ({ stats }) => {
   );
 };
 
-const Transactions = ({ expenses, onEdit, onDelete }) => (
-  <section className="section-block">
-    <div className="section-title">
-      <div>
-        <p className="eyebrow">Recent</p>
-        <h2>Transactions</h2>
-      </div>
-      <span>{expenses.length} total</span>
-    </div>
-    {expenses.length === 0 ? (
-      <div className="empty-state">
-        <IndianRupee size={32} />
-        <strong>No expenses yet</strong>
-        <p>Tap plus to log your first one, or mark today as no-spend.</p>
-      </div>
-    ) : (
-      <div className="transaction-list">
-        {expenses.slice(0, 8).map((expense) => {
-          const sector = getSector(expense.sector);
-          const Icon = sectorIcons[expense.sector];
-          const date = new Date(expense.date);
-          return (
-            <article className="transaction-item" key={expense.id}>
-              <button className="transaction-main" onClick={() => onEdit(expense)}>
-                <span className="transaction-icon" style={{ color: sector.color, backgroundColor: `${sector.color}18` }}>
-                  <Icon size={18} />
-                </span>
-                <span className="transaction-copy">
-                  <strong>{sector.shortLabel}</strong>
-                  <small>{expense.note || (isToday(date) ? 'Today' : formatDate(date))}</small>
-                </span>
-                <span className="transaction-amount">
-                  <strong>-{formatCurrency(expense.amount)}</strong>
-                  <small>{isToday(date) ? 'Today' : formatDate(date)}</small>
-                </span>
-              </button>
-              <div className="transaction-actions">
-                <IconButton label="Edit transaction" onClick={() => onEdit(expense)}>
-                  <Pencil size={16} />
-                </IconButton>
-                <IconButton label="Delete transaction" className="danger" onClick={() => onDelete(expense.id)}>
-                  <Trash2 size={16} />
-                </IconButton>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    )}
-  </section>
-);
-
-export const AddExpenseModal = ({ isOpen, onClose, onSave, defaultSector, editingExpense }) => {
+export const AddExpenseModal = ({ isOpen, onClose, onSave, defaultSector, editingExpense, selectedDate }) => {
   const [amount, setAmount] = useState('');
   const [sector, setSector] = useState(defaultSector || 'groceries');
   const [note, setNote] = useState('');
+  const [date, setDate] = useState(formatDateISO(new Date()));
 
   useEffect(() => {
     if (!isOpen) return;
     setAmount(editingExpense ? String(editingExpense.amount) : '');
     setSector(editingExpense?.sector || defaultSector || 'groceries');
     setNote(editingExpense?.note || '');
-  }, [defaultSector, editingExpense, isOpen]);
+    setDate(editingExpense ? formatDateISO(new Date(editingExpense.date)) : formatDateISO(selectedDate || new Date()));
+  }, [defaultSector, editingExpense, isOpen, selectedDate]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const parsed = parseCurrencyInput(amount);
     if (parsed <= 0) return;
-    onSave({ amount: parsed, sector, note });
+    onSave({ amount: parsed, sector, note, date: getDateFromISO(date) });
     onClose();
   };
 
@@ -585,6 +386,10 @@ export const AddExpenseModal = ({ isOpen, onClose, onSave, defaultSector, editin
         <label className="field-label">
           Note
           <input type="text" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Tea, petrol, vegetables..." />
+        </label>
+        <label className="field-label">
+          Date
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
         </label>
         <button className="primary-button" type="submit">
           <IndianRupee size={19} />
