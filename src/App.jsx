@@ -6,21 +6,19 @@ import useTimetable from './hooks/useTimetable';
 import useLists from './hooks/useLists';
 import { useTheme } from './hooks/useTheme';
 import { getCoachState } from './utils/assistantLogic';
-import { getLocalTodayDateString, formatDateISO } from './utils/dateUtils';
-import { AppHeader, AlertDeck, AssistantHero } from './components/AssistantShell';
+import { formatDateISO } from './utils/dateUtils';
+import { AppHeader } from './components/AssistantShell';
 import { AddExpenseModal, BudgetModule, SettingsModal } from './components/BudgetModule';
 import { TimetableModule } from './components/TimetableModule';
 import { TaskHistoryModule } from './components/TaskHistoryModule';
 import MyListModule from './components/MyListModule';
 import SplashScreen from './components/SplashScreen';
-import ModuleSelector from './components/ModuleSelector';
+import BottomNav from './components/BottomNav';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
-  console.log("VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL);
-
-  const [currentView, setCurrentView] = useState('splash'); // 'splash' | 'selector' | 'budget' | 'timetable'
-  const [userProfile, setUserProfile] = useState({ name: 'Akash', avatar: null });
+  const [currentTab, setCurrentTab] = useState('budget');
+  const [showSplash, setShowSplash] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const { theme, toggleTheme } = useTheme();
@@ -56,14 +54,21 @@ function App() {
   const monthlyStats = getMonthlyStats(selectedDate);
   const zeroDayStreak = getZeroDayStreak();
   const activeStats = budgetView === 'month' ? monthlyStats : weeklyStats;
-  
+
   const todayTasks = useMemo(() => {
     const dateStr = formatDateISO(selectedDate);
-    return timetable.tasks.filter(t => t.date === dateStr);
+    return timetable.tasks.filter((t) => t.date === dateStr);
   }, [timetable.tasks, selectedDate]);
 
   const coach = useMemo(
-    () => getCoachState({ weeklyStats, monthlyStats, todayStats, zeroDayStreak, tasks: todayTasks }),
+    () =>
+      getCoachState({
+        weeklyStats,
+        monthlyStats,
+        todayStats,
+        zeroDayStreak,
+        tasks: todayTasks,
+      }),
     [weeklyStats, monthlyStats, todayStats, zeroDayStreak, todayTasks]
   );
 
@@ -84,45 +89,45 @@ function App() {
       updateExpense(editingExpense.id, { amount, sector, note, date });
       return;
     }
-
     addExpense(amount, sector, note, date);
   };
 
-  return (
-    <div className="app-shell">
-      <AnimatePresence mode="wait">
-        {currentView === 'splash' && (
-          <SplashScreen key="splash" onEnter={() => setCurrentView('selector')} />
-        )}
+  // Timetable internal history navigation
+  const [showTaskHistory, setShowTaskHistory] = useState(false);
 
-        {currentView === 'selector' && (
-          <ModuleSelector 
-            key="selector" 
-            onSelect={(id) => setCurrentView(id)} 
-            userProfile={userProfile} 
+  const pageTransition = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 },
+    transition: { duration: 0.2 },
+  };
+
+  return (
+    <div className="app-root">
+      <AnimatePresence>
+        {showSplash && (
+          <SplashScreen
+            key="splash"
+            onComplete={() => setShowSplash(false)}
           />
         )}
+      </AnimatePresence>
 
-        {(currentView === 'budget' || currentView === 'timetable' || currentView === 'lists' || currentView === 'task-history') && (
-          <motion.div 
-            key="app-main"
-            className="app-container"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <AppHeader
-              activeModule={currentView}
-              onBack={() => setCurrentView('selector')}
-              onSettings={() => setShowSettings(true)}
-              theme={theme}
-              toggleTheme={toggleTheme}
-              selectedDate={selectedDate}
-              onDateSelect={setSelectedDate}
-            />
-            <main>
-              {currentView === 'budget' && (
-                <>
+      {!showSplash && (
+        <>
+          <AppHeader
+            activeTab={currentTab}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            onSettings={() => setShowSettings(true)}
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+          />
+
+          <main className="page-content">
+            <AnimatePresence mode="wait">
+              {currentTab === 'budget' && (
+                <motion.div key="budget" {...pageTransition}>
                   <BudgetModule
                     view={budgetView}
                     setView={setBudgetView}
@@ -143,47 +148,60 @@ function App() {
                     onDelete={removeExpense}
                     selectedDate={selectedDate}
                   />
-                </>
+                </motion.div>
               )}
-              {currentView === 'timetable' && (
-                <>
-                  <TimetableModule
-                    tasks={timetable.tasks}
-                    onAddTask={timetable.addTask}
-                    onToggleTask={timetable.toggleTask}
-                    onEditTask={timetable.editTask}
-                    onDeleteTask={timetable.removeTask}
-                    onRescheduleTask={timetable.rescheduleTaskToNextDay}
-                    coach={coach}
-                    selectedDate={selectedDate}
-                    onViewHistory={() => setCurrentView('task-history')}
-                  />
-                </>
-              )}
-              {currentView === 'task-history' && (
-                <TaskHistoryModule
-                  tasks={timetable.tasks}
-                  onBack={() => setCurrentView('timetable')}
-                />
-              )}
-              {currentView === 'lists' && (
-                <MyListModule
-                  lists={listData.lists}
-                  onAddList={listData.addList}
-                  onRemoveList={listData.removeList}
-                  onAddItem={listData.addItemToList}
-                  onToggleItem={listData.toggleItem}
-                  onRemoveItem={listData.removeItem}
-                />
-              )}
-            </main>
 
-            <button className="floating-add" onClick={() => (currentView === 'budget' ? openAddExpense() : null)}>
-              <Plus size={28} />
+              {currentTab === 'schedule' && (
+                <motion.div key="schedule" {...pageTransition}>
+                  {!showTaskHistory ? (
+                    <TimetableModule
+                      tasks={timetable.tasks}
+                      onAddTask={timetable.addTask}
+                      onToggleTask={timetable.toggleTask}
+                      onEditTask={timetable.editTask}
+                      onDeleteTask={timetable.removeTask}
+                      onRescheduleTask={timetable.rescheduleTaskToNextDay}
+                      coach={coach}
+                      selectedDate={selectedDate}
+                      onViewHistory={() => setShowTaskHistory(true)}
+                    />
+                  ) : (
+                    <TaskHistoryModule
+                      tasks={timetable.tasks}
+                      onBack={() => setShowTaskHistory(false)}
+                    />
+                  )}
+                </motion.div>
+              )}
+
+              {currentTab === 'manifest' && (
+                <motion.div key="manifest" {...pageTransition}>
+                  <MyListModule
+                    lists={listData.lists}
+                    onAddList={listData.addList}
+                    onRemoveList={listData.removeList}
+                    onAddItem={listData.addItemToList}
+                    onToggleItem={listData.toggleItem}
+                    onRemoveItem={listData.removeItem}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </main>
+
+          <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} />
+
+          {currentTab === 'budget' && (
+            <button
+              className="fab"
+              onClick={() => openAddExpense()}
+              aria-label="Add expense"
+            >
+              <Plus size={24} />
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </>
+      )}
 
       <AddExpenseModal
         isOpen={showExpenseModal}
@@ -193,19 +211,16 @@ function App() {
         editingExpense={editingExpense}
         selectedDate={selectedDate}
       />
-      <SettingsModal 
-        isOpen={showSettings} 
-        onClose={() => setShowSettings(false)} 
-        budgets={budgets} 
-        onUpdateBudget={updateBudget} 
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        budgets={budgets}
+        onUpdateBudget={updateBudget}
         weeklyTarget={weeklyTarget}
         monthlyTarget={monthlyTarget}
         onUpdateWeeklyTarget={updateWeeklyTarget}
         onUpdateMonthlyTarget={updateMonthlyTarget}
       />
-      <div id="debug-env" style={{ display: 'none' }}>
-        DEBUG_URL:{import.meta.env.VITE_SUPABASE_URL}
-      </div>
     </div>
   );
 }

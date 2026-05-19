@@ -9,9 +9,51 @@ import { getRangeExpenses } from '../hooks/useExpenses';
 import { getWeekStart, getWeekEnd, getMonthStart, getMonthEnd } from '../utils/dateUtils';
 import { BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 
+// Recharts can't read CSS variables — use actual hex values from the design system
+const CHART_COLORS = {
+  accent: '#818cf8',
+  emerald: '#34d399',
+  amber: '#fbbf24',
+  rose: '#fb7185',
+  violet: '#a78bfa',
+  teal: '#2dd4bf',
+};
+
+const SECTOR_CHART_COLORS = [
+  '#34d399', // groceries  — emerald
+  '#a3e635', // fruits     — lime
+  '#fb923c', // food       — orange
+  '#818cf8', // transport  — accent
+  '#fb7185', // shopping   — rose
+  '#fbbf24', // bills      — amber
+  '#2dd4bf', // health     — teal
+  '#a78bfa', // fun        — violet
+  '#71717a', // other      — zinc
+];
+
+const tooltipStyle = {
+  borderRadius: 14,
+  border: 'none',
+  background: '#18181b',
+  color: '#fafafa',
+  boxShadow: '0 8px 32px rgba(0,0,0,.45)',
+  fontSize: '0.82rem',
+  padding: '10px 14px',
+};
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={tooltipStyle}>
+      <p style={{ margin: 0, fontWeight: 600, marginBottom: 4 }}>{payload[0].payload.name || label}</p>
+      <p style={{ margin: 0, color: '#a1a1aa' }}>{formatCurrency(payload[0].value)}</p>
+    </div>
+  );
+};
+
 export const AnalyticsPanel = ({ expenses, selectedDate }) => {
-  const [filter, setFilter] = useState('week'); // 'week', 'month', 'all'
-  const [chartType, setChartType] = useState('pie'); // 'pie', 'bar'
+  const [filter, setFilter] = useState('week');
+  const [chartType, setChartType] = useState('pie');
 
   const filteredExpenses = useMemo(() => {
     if (filter === 'all') return expenses;
@@ -26,51 +68,78 @@ export const AnalyticsPanel = ({ expenses, selectedDate }) => {
   }, [expenses, filter, selectedDate]);
 
   const sectorData = useMemo(() => {
-    const data = SECTORS.map(s => ({
+    const data = SECTORS.map((s, i) => ({
       name: s.shortLabel,
       value: 0,
-      color: s.color
+      color: SECTOR_CHART_COLORS[i] || s.color,
     }));
     filteredExpenses.forEach(exp => {
       const sectorItem = data.find(s => s.name === getSector(exp.sector).shortLabel);
-      if (sectorItem) {
-        sectorItem.value += exp.amount;
-      }
+      if (sectorItem) sectorItem.value += exp.amount;
     });
     return data.filter(d => d.value > 0).sort((a, b) => b.value - a.value);
   }, [filteredExpenses]);
 
+  const totalSpend = sectorData.reduce((s, d) => s + d.value, 0);
+
   return (
-    <motion.section 
-      className="analytics-panel section-block"
+    <motion.section
+      className="surface-card"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      style={{ padding: 20 }}
     >
-      <div className="section-title" style={{ marginBottom: '16px' }}>
+      {/* Header */}
+      <div className="section-header">
         <div>
-          <p className="eyebrow">Data Insights</p>
-          <h2>Analytics</h2>
-        </div>
-        <div className="analytics-controls">
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} className="analytics-select">
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="all">All Time</option>
-          </select>
-          <div className="segmented-control compact">
-            <button className={chartType === 'pie' ? 'active' : ''} onClick={() => setChartType('pie')}>
-              <PieChartIcon size={16} />
-            </button>
-            <button className={chartType === 'bar' ? 'active' : ''} onClick={() => setChartType('bar')}>
-              <BarChart3 size={16} />
-            </button>
-          </div>
+          <p className="section-eyebrow">Data Insights</p>
+          <h2 className="section-title">Analytics</h2>
         </div>
       </div>
 
-      <div className="chart-container" style={{ height: '300px', width: '100%' }}>
+      {/* Time filter tabs */}
+      <div className="seg-tabs" style={{ marginBottom: 16 }}>
+        {[['week', 'Week'], ['month', 'Month'], ['all', 'All']].map(([id, label]) => (
+          <button
+            key={id}
+            className={`seg-tab ${filter === id ? 'active' : ''}`}
+            onClick={() => setFilter(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Chart type toggle */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>
+          Total: {formatCurrency(totalSpend)}
+        </span>
+        <div className="seg-tabs" style={{ display: 'inline-flex', minHeight: 0, padding: 2, gap: 2 }}>
+          <button
+            className={`seg-tab ${chartType === 'pie' ? 'active' : ''}`}
+            onClick={() => setChartType('pie')}
+            style={{ padding: '6px 12px' }}
+          >
+            <PieChartIcon size={14} />
+          </button>
+          <button
+            className={`seg-tab ${chartType === 'bar' ? 'active' : ''}`}
+            onClick={() => setChartType('bar')}
+            style={{ padding: '6px 12px' }}
+          >
+            <BarChart3 size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <div style={{ height: 300, width: '100%' }}>
         {sectorData.length === 0 ? (
-          <div className="empty-state">No data for this period</div>
+          <div className="empty-state">
+            <PieChartIcon size={32} />
+            <strong>No data for this period</strong>
+          </div>
         ) : chartType === 'pie' ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -80,32 +149,38 @@ export const AnalyticsPanel = ({ expenses, selectedDate }) => {
                 cy="50%"
                 innerRadius={60}
                 outerRadius={100}
-                paddingAngle={5}
+                paddingAngle={4}
                 dataKey="value"
                 stroke="none"
+                animationDuration={600}
               >
                 {sectorData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <RechartsTooltip 
-                formatter={(value) => formatCurrency(value)}
-                contentStyle={{ borderRadius: '12px', border: 'none', background: 'var(--panel)', color: 'var(--ink)' }}
-              />
+              <RechartsTooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={sectorData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
-              <XAxis dataKey="name" stroke="var(--muted)" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="var(--muted)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value}`} />
-              <RechartsTooltip 
-                formatter={(value) => formatCurrency(value)}
-                cursor={{ fill: 'var(--line)' }}
-                contentStyle={{ borderRadius: '12px', border: 'none', background: 'var(--panel)', color: 'var(--ink)' }}
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+              <XAxis
+                dataKey="name"
+                stroke="#71717a"
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
               />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+              <YAxis
+                stroke="#71717a"
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => `₹${value}`}
+              />
+              <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: '#27272a' }} />
+              <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={600}>
                 {sectorData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
@@ -114,6 +189,18 @@ export const AnalyticsPanel = ({ expenses, selectedDate }) => {
           </ResponsiveContainer>
         )}
       </div>
+
+      {/* Legend */}
+      {sectorData.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 16, justifyContent: 'center' }}>
+          {sectorData.map(d => (
+            <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-2)' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+              {d.name}
+            </div>
+          ))}
+        </div>
+      )}
     </motion.section>
   );
 };
