@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft, Moon, Sun } from 'lucide-react';
 import useExpenses from './hooks/useExpenses';
 import useGoals from './hooks/useGoals';
 import useTimetable from './hooks/useTimetable';
@@ -8,20 +8,27 @@ import { useTheme } from './hooks/useTheme';
 import { useAuth } from './hooks/useAuth';
 import { getCoachState } from './utils/assistantLogic';
 import { formatDateISO } from './utils/dateUtils';
-import { AppHeader } from './components/AssistantShell';
 import { AddExpenseModal, BudgetModule, SettingsModal } from './components/BudgetModule';
 import { TimetableModule } from './components/TimetableModule';
 import { TaskHistoryModule } from './components/TaskHistoryModule';
 import MyListModule from './components/MyListModule';
 import SplashScreen from './components/SplashScreen';
-import BottomNav from './components/BottomNav';
 import AuthScreen from './components/AuthScreen';
+import { ServiceHub } from './components/ServiceHub';
+import { Taskbar } from './components/Taskbar';
+import { UserMenu } from './components/UserMenu';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
-  const [currentTab, setCurrentTab] = useState('budget');
+  const [currentService, setCurrentService] = useState(null); // null = Hub
+  const [activeTab, setActiveTab] = useState('home');
   const [showSplash, setShowSplash] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const handleServiceSelect = (service) => {
+    setCurrentService(service);
+    setActiveTab('home'); // reset to home tab when switching service
+  };
 
   // Auth
   const {
@@ -40,6 +47,7 @@ function App() {
   const timetable = useTimetable();
   const goals = useGoals();
   const listData = useLists();
+  
   const [budgetView, setBudgetView] = useState('today');
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -107,34 +115,55 @@ function App() {
     addExpense(amount, sector, note, date);
   };
 
-  // Timetable internal history navigation
   const [showTaskHistory, setShowTaskHistory] = useState(false);
 
   const pageTransition = {
-    initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -10 },
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
     transition: { duration: 0.2 },
   };
 
-  // Determine what to show
   const isAuthenticated = !!user;
   const showAuth = !showSplash && !authLoading && !isAuthenticated;
   const showApp = !showSplash && !authLoading && isAuthenticated;
 
+  // Header for active service
+  const renderServiceHeader = (title) => (
+    <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-3 pb-4 backdrop-blur-xl bg-zinc-950/70 border-b border-white/5 pt-safe">
+      <div className="flex items-center gap-2">
+        <button 
+          className="p-2 -ml-2 rounded-full hover:bg-white/5 transition-colors text-zinc-400 hover:text-white" 
+          onClick={() => setCurrentService(null)} 
+          title="Back to Hub"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <button 
+          className="p-2 rounded-full hover:bg-white/5 transition-colors text-zinc-400 hover:text-white" 
+          onClick={toggleTheme} 
+          title="Toggle Theme"
+        >
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
+      
+      <h1 className="text-lg font-semibold tracking-tight text-white flex-1 text-center">{title}</h1>
+      
+      <div className="flex items-center justify-end min-w-[80px]">
+        <UserMenu />
+      </div>
+    </header>
+  );
+
   return (
-    <div className="app-root">
-      {/* Splash Screen */}
+    <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans pb-24 overflow-x-hidden selection:bg-zinc-800">
       <AnimatePresence>
         {(showSplash || authLoading) && (
-          <SplashScreen
-            key="splash"
-            onComplete={() => setShowSplash(false)}
-          />
+          <SplashScreen key="splash" onComplete={() => setShowSplash(false)} />
         )}
       </AnimatePresence>
 
-      {/* Auth Screen — shown when not logged in */}
       <AnimatePresence>
         {showAuth && (
           <AuthScreen
@@ -148,24 +177,31 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* Main App — shown after authentication */}
       {showApp && (
         <>
-          <AppHeader
-            activeTab={currentTab}
-            theme={theme}
-            toggleTheme={toggleTheme}
-            onSettings={() => setShowSettings(true)}
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-            userName={getUserDisplayName()}
-          />
+          <AnimatePresence mode="wait">
+            {currentService === null && (
+              <motion.div key="hub" className="page-wrapper" {...pageTransition}>
+                <ServiceHub
+                  userName={getUserDisplayName()}
+                  onSelectService={handleServiceSelect}
+                  theme={theme}
+                  toggleTheme={toggleTheme}
+                  onSettings={() => setShowSettings(true)}
+                  todayStats={todayStats}
+                  weeklyStats={weeklyStats}
+                  todayTasks={todayTasks}
+                  lists={listData.lists}
+                />
+              </motion.div>
+            )}
 
-          <main className="page-content">
-            <AnimatePresence mode="wait">
-              {currentTab === 'budget' && (
-                <motion.div key="budget" {...pageTransition}>
+            {currentService === 'budget' && (
+              <motion.div key="budget" className="page-wrapper" {...pageTransition}>
+                {renderServiceHeader('Budget Tracker')}
+                <main className="page-content">
                   <BudgetModule
+                    activeTab={activeTab}
                     view={budgetView}
                     setView={setBudgetView}
                     activeStats={activeStats}
@@ -184,36 +220,53 @@ function App() {
                     onEdit={openEditExpense}
                     onDelete={removeExpense}
                     selectedDate={selectedDate}
+                    onDateSelect={setSelectedDate}
                   />
-                </motion.div>
-              )}
+                </main>
+                <button className="fab" onClick={() => openAddExpense()} aria-label="Add expense">
+                  <Plus size={24} />
+                </button>
+              </motion.div>
+            )}
 
-              {currentTab === 'schedule' && (
-                <motion.div key="schedule" {...pageTransition}>
-                  {!showTaskHistory ? (
-                    <TimetableModule
-                      tasks={timetable.tasks}
-                      onAddTask={timetable.addTask}
-                      onToggleTask={timetable.toggleTask}
-                      onEditTask={timetable.editTask}
-                      onDeleteTask={timetable.removeTask}
-                      onRescheduleTask={timetable.rescheduleTaskToNextDay}
-                      coach={coach}
-                      selectedDate={selectedDate}
-                      onViewHistory={() => setShowTaskHistory(true)}
-                    />
-                  ) : (
-                    <TaskHistoryModule
-                      tasks={timetable.tasks}
-                      onBack={() => setShowTaskHistory(false)}
-                    />
-                  )}
-                </motion.div>
-              )}
+            {currentService === 'investing' && (
+              <motion.div key="investing" className="page-wrapper" {...pageTransition}>
+                {renderServiceHeader('AI Investing')}
+                <main className="page-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
+                  <div style={{ textAlign: 'center', color: 'var(--text-3)' }}>
+                    <h2 style={{ color: 'var(--text-1)' }}>Coming Soon</h2>
+                    <p>Advanced AI portfolio insights</p>
+                  </div>
+                </main>
+              </motion.div>
+            )}
 
-              {currentTab === 'manifest' && (
-                <motion.div key="manifest" {...pageTransition}>
+            {currentService === 'schedule' && (
+              <motion.div key="schedule" className="page-wrapper" {...pageTransition}>
+                {renderServiceHeader('Schedule')}
+                <main className="page-content">
+                  <TimetableModule
+                    activeTab={activeTab}
+                    tasks={timetable.tasks}
+                    onAddTask={timetable.addTask}
+                    onToggleTask={timetable.toggleTask}
+                    onEditTask={timetable.editTask}
+                    onDeleteTask={timetable.removeTask}
+                    onRescheduleTask={timetable.rescheduleTaskToNextDay}
+                    coach={coach}
+                    selectedDate={selectedDate}
+                    onViewHistory={() => setShowTaskHistory(true)}
+                  />
+                </main>
+              </motion.div>
+            )}
+
+            {currentService === 'manifest' && (
+              <motion.div key="manifest" className="page-wrapper" {...pageTransition}>
+                {renderServiceHeader('Vision Board')}
+                <main className="page-content">
                   <MyListModule
+                    activeTab={activeTab}
                     lists={listData.lists}
                     onAddList={listData.addList}
                     onRemoveList={listData.removeList}
@@ -221,21 +274,13 @@ function App() {
                     onToggleItem={listData.toggleItem}
                     onRemoveItem={listData.removeItem}
                   />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </main>
+                </main>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <BottomNav activeTab={currentTab} onTabChange={setCurrentTab} />
-
-          {currentTab === 'budget' && (
-            <button
-              className="fab"
-              onClick={() => openAddExpense()}
-              aria-label="Add expense"
-            >
-              <Plus size={24} />
-            </button>
+          {currentService && (
+            <Taskbar activeService={currentService} activeTab={activeTab} onTabSelect={setActiveTab} />
           )}
         </>
       )}

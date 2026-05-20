@@ -21,9 +21,37 @@ const matchCategory = (title) => {
   return visionCategories.find(c => lower.includes(c.id) || lower.includes(c.label.toLowerCase())) || null;
 };
 
-export const MyListModule = ({ lists, onAddList, onRemoveList, onAddItem, onToggleItem, onRemoveItem }) => {
+export const MyListModule = ({ activeTab, lists, onAddList, onRemoveList, onAddItem, onToggleItem, onRemoveItem }) => {
   const [showAddListModal, setShowAddListModal] = useState(false);
   const [expandedListId, setExpandedListId] = useState(null);
+
+  if (activeTab === 'plan') {
+    return (
+      <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 40 }}>
+        <h2 style={{ color: 'var(--text-1)' }}>Tracking & Plan</h2>
+        <p className="section-badge">Premium</p>
+        <p>Coming Soon</p>
+      </div>
+    );
+  }
+  if (activeTab === 'ai') {
+    return (
+      <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 40 }}>
+        <h2 style={{ color: 'var(--text-1)' }}>Vision AI Generator</h2>
+        <p className="section-badge">Premium</p>
+        <p>Coming Soon</p>
+      </div>
+    );
+  }
+  if (activeTab === 'milestones') {
+    return (
+      <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 40 }}>
+        <h2 style={{ color: 'var(--text-1)' }}>Milestones Tracker</h2>
+        <p className="section-badge">Premium</p>
+        <p>Coming Soon</p>
+      </div>
+    );
+  }
 
   const totalItems = lists.reduce((sum, l) => sum + l.items.length, 0);
   const totalDone = lists.reduce((sum, l) => sum + l.items.filter(i => i.done).length, 0);

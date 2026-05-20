@@ -13,7 +13,7 @@ const taskTypes = [
   { id: 'fun', label: 'Fun', icon: Sparkles, color: 'var(--violet)' },
 ];
 
-export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onEditTask, onDeleteTask, onRescheduleTask, coach, selectedDate, onViewHistory }) => {
+export const TimetableModule = ({ activeTab, tasks, onAddTask, onToggleTask, onEditTask, onDeleteTask, onRescheduleTask, coach, selectedDate, onViewHistory }) => {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [taskToComplete, setTaskToComplete] = useState(null);
@@ -28,8 +28,34 @@ export const TimetableModule = ({ tasks, onAddTask, onToggleTask, onEditTask, on
 
   const circumference = 2 * Math.PI * 34;
 
+  if (activeTab === 'analytics') {
+    return (
+      <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 40 }}>
+        <h2 style={{ color: 'var(--text-1)' }}>Productivity Insights</h2>
+        <p>Coming Soon</p>
+      </div>
+    );
+  }
+  if (activeTab === 'recent') {
+    return (
+      <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 40 }}>
+        <h2 style={{ color: 'var(--text-1)' }}>Task History</h2>
+        <p>Coming Soon</p>
+      </div>
+    );
+  }
+  if (activeTab === 'smart') {
+    return (
+      <div style={{ textAlign: 'center', color: 'var(--text-3)', padding: 40 }}>
+        <h2 style={{ color: 'var(--text-1)' }}>Smart AI Scheduler</h2>
+        <p className="section-badge">Premium</p>
+        <p>Coming Soon</p>
+      </div>
+    );
+  }
+
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 100 }}>
       {/* Gradient Hero */}
       <div className="gradient-hero schedule">
         <p className="hero-eyebrow">Your schedule</p>
