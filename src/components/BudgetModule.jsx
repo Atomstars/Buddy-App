@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Coffee,
   IndianRupee,
+  LogOut,
   Pencil,
   Plus,
   PiggyBank,
@@ -572,7 +573,7 @@ export const AddExpenseModal = ({ isOpen, onClose, onSave, defaultSector, editin
 /* ═══════════════════════════════════════════
    Settings Modal
    ═══════════════════════════════════════════ */
-export const SettingsModal = ({ isOpen, onClose, budgets, onUpdateBudget, weeklyTarget, onUpdateWeeklyTarget, monthlyTarget, onUpdateMonthlyTarget }) => {
+export const SettingsModal = ({ isOpen, onClose, budgets, onUpdateBudget, weeklyTarget, onUpdateWeeklyTarget, monthlyTarget, onUpdateMonthlyTarget, onSignOut, userName, userEmail }) => {
   const [draft, setDraft] = useState(budgets);
   const [draftWeekly, setDraftWeekly] = useState(weeklyTarget || 0);
   const [draftMonthly, setDraftMonthly] = useState(monthlyTarget || 0);
@@ -691,6 +692,28 @@ export const SettingsModal = ({ isOpen, onClose, budgets, onUpdateBudget, weekly
                 Save Settings
               </button>
             </form>
+
+            {/* User Profile & Sign Out */}
+            {onSignOut && (
+              <div className="surface-card" style={{ padding: 16, marginTop: 16 }}>
+                <p className="section-eyebrow" style={{ marginBottom: 12 }}>Account</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, fontSize: '0.9rem', margin: 0 }}>{userName || 'User'}</p>
+                    {userEmail && <p style={{ fontSize: '0.72rem', color: 'var(--text-3)', margin: '2px 0 0' }}>{userEmail}</p>}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={onSignOut}
+                    style={{ padding: '0 16px', minHeight: 38, fontSize: '0.8rem', color: 'var(--rose)', borderColor: 'var(--rose)' }}
+                  >
+                    <LogOut size={16} />
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

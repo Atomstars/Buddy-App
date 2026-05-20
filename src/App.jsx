@@ -5,6 +5,7 @@ import useGoals from './hooks/useGoals';
 import useTimetable from './hooks/useTimetable';
 import useLists from './hooks/useLists';
 import { useTheme } from './hooks/useTheme';
+import { useAuth } from './hooks/useAuth';
 import { getCoachState } from './utils/assistantLogic';
 import { formatDateISO } from './utils/dateUtils';
 import { AppHeader } from './components/AssistantShell';
@@ -14,12 +15,26 @@ import { TaskHistoryModule } from './components/TaskHistoryModule';
 import MyListModule from './components/MyListModule';
 import SplashScreen from './components/SplashScreen';
 import BottomNav from './components/BottomNav';
+import AuthScreen from './components/AuthScreen';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('budget');
   const [showSplash, setShowSplash] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Auth
+  const {
+    user,
+    loading: authLoading,
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signInWithPhone,
+    verifyOTP,
+    signOut,
+    getUserDisplayName,
+  } = useAuth();
 
   const { theme, toggleTheme } = useTheme();
   const timetable = useTimetable();
@@ -102,10 +117,16 @@ function App() {
     transition: { duration: 0.2 },
   };
 
+  // Determine what to show
+  const isAuthenticated = !!user;
+  const showAuth = !showSplash && !authLoading && !isAuthenticated;
+  const showApp = !showSplash && !authLoading && isAuthenticated;
+
   return (
     <div className="app-root">
+      {/* Splash Screen */}
       <AnimatePresence>
-        {showSplash && (
+        {(showSplash || authLoading) && (
           <SplashScreen
             key="splash"
             onComplete={() => setShowSplash(false)}
@@ -113,7 +134,22 @@ function App() {
         )}
       </AnimatePresence>
 
-      {!showSplash && (
+      {/* Auth Screen — shown when not logged in */}
+      <AnimatePresence>
+        {showAuth && (
+          <AuthScreen
+            key="auth"
+            onSignIn={signIn}
+            onSignUp={signUp}
+            onGoogleSignIn={signInWithGoogle}
+            onPhoneSignIn={signInWithPhone}
+            onVerifyOTP={verifyOTP}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Main App — shown after authentication */}
+      {showApp && (
         <>
           <AppHeader
             activeTab={currentTab}
@@ -122,6 +158,7 @@ function App() {
             onSettings={() => setShowSettings(true)}
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
+            userName={getUserDisplayName()}
           />
 
           <main className="page-content">
@@ -220,6 +257,9 @@ function App() {
         monthlyTarget={monthlyTarget}
         onUpdateWeeklyTarget={updateWeeklyTarget}
         onUpdateMonthlyTarget={updateMonthlyTarget}
+        onSignOut={signOut}
+        userName={getUserDisplayName()}
+        userEmail={user?.email}
       />
     </div>
   );

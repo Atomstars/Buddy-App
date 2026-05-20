@@ -15,6 +15,7 @@ export const AppHeader = ({
   onSettings,
   selectedDate,
   onDateSelect,
+  userName,
 }) => {
   const hour = new Date().getHours();
   const greeting =
@@ -25,7 +26,7 @@ export const AppHeader = ({
       <div className="page-header-row">
         <div className="header-left">
           <div>
-            <p className="header-greeting">{greeting}</p>
+            <p className="header-greeting">{greeting}{userName ? `, ${userName}` : ''}</p>
             <h1 className="header-title">{tabNames[activeTab]}</h1>
           </div>
         </div>
