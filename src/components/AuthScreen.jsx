@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Mail, Lock, Phone, ArrowRight, Eye, EyeOff, X, Check, Loader2 } from 'lucide-react';
 
-const AuthScreen = ({ onSignIn, onSignUp, onGoogleSignIn, onPhoneSignIn, onVerifyOTP }) => {
+const AuthScreen = ({ onSignIn, onSignUp, onGoogleSignIn, onPhoneSignIn, onVerifyOTP, onDevSignIn }) => {
   const [mode, setMode] = useState('login'); // login | signup | phone | otp
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -295,6 +295,31 @@ const AuthScreen = ({ onSignIn, onSignUp, onGoogleSignIn, onPhoneSignIn, onVerif
                   <span>Phone</span>
                 </button>
               </div>
+
+              {/* Dev Bypass */}
+              {onDevSignIn && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={onDevSignIn}
+                  style={{
+                    width: '100%',
+                    marginTop: 16,
+                    borderStyle: 'dashed',
+                    borderColor: 'var(--accent)',
+                    color: 'var(--accent)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Sparkles size={16} />
+                  <span>Sign In as Dev Guest (Bypass)</span>
+                </button>
+              )}
             </motion.div>
           )}
 

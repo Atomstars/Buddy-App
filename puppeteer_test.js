@@ -20,7 +20,7 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
   try {
     console.log("Navigating to app...");
-    await page.goto('http://localhost:5173', { waitUntil: 'networkidle0', timeout: 15000 });
+    await page.goto('http://localhost:5174', { waitUntil: 'networkidle0', timeout: 15000 });
     
     // Splash screen click
     await delay(3000);

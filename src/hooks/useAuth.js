@@ -7,6 +7,20 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if we have a local mock session saved
+    const savedMock = localStorage.getItem('sb-mock-session');
+    if (savedMock) {
+      try {
+        const mockUser = JSON.parse(savedMock);
+        setUser(mockUser);
+        setSession({ user: mockUser });
+        setLoading(false);
+        return;
+      } catch (e) {
+        localStorage.removeItem('sb-mock-session');
+      }
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
@@ -16,6 +30,8 @@ export const useAuth = () => {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      // If we have a mock user running, don't let Supabase empty state overwrite it
+      if (localStorage.getItem('sb-mock-session')) return;
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
@@ -56,12 +72,26 @@ export const useAuth = () => {
     return { data, error };
   }, []);
 
+  const signInDev = useCallback(() => {
+    const mockUser = {
+      id: '00000000-0000-0000-0000-000000000000',
+      email: 'developer@budgetbuddy.local',
+      user_metadata: {
+        full_name: 'Developer Guest',
+        name: 'Developer Guest'
+      }
+    };
+    setUser(mockUser);
+    setSession({ user: mockUser });
+    localStorage.setItem('sb-mock-session', JSON.stringify(mockUser));
+    return { data: { user: mockUser }, error: null };
+  }, []);
+
   const signOut = useCallback(async () => {
+    localStorage.removeItem('sb-mock-session');
     const { error } = await supabase.auth.signOut();
-    if (!error) {
-      setUser(null);
-      setSession(null);
-    }
+    setUser(null);
+    setSession(null);
     return { error };
   }, []);
 
@@ -82,6 +112,7 @@ export const useAuth = () => {
     signInWithGoogle,
     signInWithPhone,
     verifyOTP,
+    signInDev,
     signOut,
     getUserDisplayName,
   };

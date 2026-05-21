@@ -36,10 +36,13 @@ export const BudgetModule = ({
         return (
           <BudgetDashboard 
             monthlyStats={monthlyStats}
+            weeklyStats={weeklyStats}
             todayStats={todayStats}
+            coach={coach}
+            expenses={expenses}
             selectedDate={selectedDate}
             onDateSelect={onDateSelect}
-            onAddTransaction={() => setIsAddExpenseOpen(true)}
+            onQuickAdd={onQuickAdd}
           />
         );
       case 'analytics':

@@ -41,8 +41,8 @@ export const BudgetAnalytics = ({ monthlyStats }) => {
   }, [monthlyStats.expenses]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 100 }}>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 800, textAlign: 'center', paddingTop: 20 }}>Analytics</h2>
+    <div className="flex flex-col gap-6 pb-24 w-full max-w-md mx-auto">
+      <h2 className="text-2xl font-bold text-center pt-6 text-white">Analytics</h2>
       
       {/* Spend by Category Pie Chart */}
       <div className="fin-card">
