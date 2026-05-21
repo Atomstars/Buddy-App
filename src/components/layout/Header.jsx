@@ -18,7 +18,7 @@ export const Header = ({ onProfileClick }) => {
       
       <div className="flex-1 flex justify-center">
         <h1 className="text-[20px] font-bold tracking-tight text-white m-0 leading-none" style={{ fontFamily: 'var(--font-display, inherit)' }}>
-          Buddy
+          Aura
         </h1>
       </div>
       

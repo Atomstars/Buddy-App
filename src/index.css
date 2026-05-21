@@ -10,8 +10,8 @@
    ──────────────────────────────────────────────────────────── */
 
 @theme {
-  --font-display: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: 'Satoshi', 'Outfit', sans-serif;
+  --font-body: 'Satoshi', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   --color-accent: #818cf8;
@@ -95,8 +95,8 @@
   --glass-hover: rgba(255, 255, 255, 0.08);
 
   /* Fonts */
-  --font-display: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: 'Satoshi', 'Outfit', sans-serif;
+  --font-body: 'Satoshi', 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Spacing */
@@ -169,16 +169,21 @@ html {
 body {
   margin: 0;
   background: #000;
-  font-family: var(--font-body);
+  font-family: 'Satoshi', 'Inter', sans-serif;
   color: var(--text-1);
   line-height: 1.5;
   overflow-x: hidden;
+  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   min-height: 100dvh;
   display: flex;
   justify-content: center;
+  /* Cinematic desktop side-chrome */
+  background-image:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(139,92,246,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 80% 70%, rgba(96,165,250,0.04) 0%, transparent 60%);
 }
 
 body::before {
@@ -203,7 +208,10 @@ body::before {
   position: relative;
   z-index: 1;
   overflow-x: hidden;
+  overflow-y: auto;
   background: #09090b;
+  /* Subtle right border line on desktop */
+  box-shadow: 1px 0 0 rgba(255,255,255,0.04), -1px 0 0 rgba(255,255,255,0.04);
 }
 
 button,

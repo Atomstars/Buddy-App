@@ -46,7 +46,7 @@ const SplashScreen = ({ onComplete }) => {
           >
             <Sparkles size={28} />
           </motion.div>
-          <h1 className="splash-name">Buddy</h1>
+          <h1 className="splash-name">Aura</h1>
           <p className="splash-tagline">Budget · Schedule · Manifest</p>
         </motion.div>
       </div>

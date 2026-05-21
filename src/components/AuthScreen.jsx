@@ -141,7 +141,7 @@ const AuthScreen = ({ onSignIn, onSignUp, onGoogleSignIn, onPhoneSignIn, onVerif
         <div className="splash-icon">
           <Sparkles size={28} />
         </div>
-        <h1 className="splash-name" style={{ fontSize: '2.2rem' }}>Buddy</h1>
+        <h1 className="splash-name" style={{ fontSize: '2.2rem' }}>Aura</h1>
         <p className="splash-tagline" style={{ fontSize: '0.7rem' }}>Budget · Schedule · Manifest</p>
       </motion.div>
 

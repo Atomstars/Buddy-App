@@ -19,6 +19,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { GlobalHomeHub } from './components/GlobalHomeHub';
+import { ScheduleModule, VisionModule, InvestModule } from './components/PlaceholderModules';
 
 function App() {
   const [activeTab, setActiveTab] = useState('home');
@@ -214,7 +215,12 @@ function App() {
             </AppShell>
           } />
 
-          {/* Placeholders for other routes that route back to hub for now */}
+          {/* Working module routes */}
+          <Route path="/schedule" element={<ScheduleModule />} />
+          <Route path="/vision"   element={<VisionModule />} />
+          <Route path="/invest"   element={<InvestModule />} />
+
+          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       )}
