@@ -9,10 +9,10 @@ export const AppShell = ({
   onProfileClick 
 }) => {
   return (
-    <div className="w-screen min-h-screen bg-black text-zinc-50 font-sans selection:bg-zinc-800 flex flex-col overflow-x-hidden">
+    <div className="w-full min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-zinc-800 flex flex-col overflow-x-hidden">
       <Header onProfileClick={onProfileClick} />
       
-      <main className="flex-1 w-full px-4 pt-6 pb-36 relative flex flex-col">
+      <main className="flex-1 w-full px-4 pt-4 pb-32 flex flex-col gap-6">
         {children}
       </main>
 

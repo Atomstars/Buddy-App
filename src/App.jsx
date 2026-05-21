@@ -126,7 +126,7 @@ function App() {
 
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans pb-24 overflow-x-hidden selection:bg-zinc-800">
+    <div className="w-full min-h-screen bg-zinc-950 text-zinc-50 font-sans overflow-x-hidden selection:bg-zinc-800 relative">
       <AnimatePresence>
         {(showSplash || authLoading) && (
           <SplashScreen key="splash" onComplete={() => setShowSplash(false)} />

@@ -11,7 +11,7 @@ const tabs = [
 
 export const FloatingBottomNavbar = ({ activeTab, onTabSelect }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-6 pt-4 px-4 pointer-events-none">
+    <nav className="sticky bottom-0 z-50 flex justify-center pb-5 pt-3 px-4 pointer-events-none w-full bg-transparent">
       <div className="pointer-events-auto flex items-center justify-between gap-2 px-3 py-2 bg-zinc-900/85 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)] w-full max-w-[340px]">
         {tabs.map((tab) => {
           const Icon = tab.icon;

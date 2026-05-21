@@ -168,7 +168,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: #000;
   font-family: var(--font-body);
   color: var(--text-1);
   line-height: 1.5;
@@ -177,6 +177,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   min-height: 100dvh;
+  display: flex;
+  justify-content: center;
 }
 
 body::before {
@@ -196,10 +198,12 @@ body::before {
 
 #root {
   width: 100%;
+  max-width: 430px;
   min-height: 100dvh;
   position: relative;
   z-index: 1;
   overflow-x: hidden;
+  background: #09090b;
 }
 
 button,

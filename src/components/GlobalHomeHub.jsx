@@ -57,7 +57,7 @@ export const GlobalHomeHub = ({
   ];
 
   return (
-    <div className="w-screen min-h-screen bg-black text-zinc-50 pb-safe relative overflow-x-hidden selection:bg-zinc-800">
+    <div className="w-full min-h-screen bg-zinc-950 text-zinc-50 pb-safe relative overflow-x-hidden selection:bg-zinc-800">
       <header className="w-full px-4 pt-12 pb-6 flex justify-between items-start">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
