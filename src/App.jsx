@@ -24,6 +24,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [showSplash, setShowSplash] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const navigate = useNavigate();
 
   // Auth
   const {
@@ -123,6 +124,15 @@ function App() {
   const isAuthenticated = !!user;
   const showAuth = !showSplash && !authLoading && !isAuthenticated;
   const showApp = !showSplash && !authLoading && isAuthenticated;
+
+  // Always redirect to Global Home Hub immediately after login
+  const prevAuth = React.useRef(false);
+  React.useEffect(() => {
+    if (!prevAuth.current && isAuthenticated && !showSplash) {
+      navigate('/', { replace: true });
+    }
+    prevAuth.current = isAuthenticated;
+  }, [isAuthenticated, showSplash]);
 
 
   return (
