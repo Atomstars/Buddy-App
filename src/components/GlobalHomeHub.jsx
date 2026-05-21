@@ -57,8 +57,8 @@ export const GlobalHomeHub = ({
   ];
 
   return (
-    <div className="min-h-screen w-full bg-black text-zinc-50 pb-safe relative overflow-x-hidden selection:bg-zinc-800">
-      <header className="w-full max-w-md mx-auto px-4 pt-12 pb-6 flex justify-between items-start">
+    <div className="w-screen min-h-screen bg-black text-zinc-50 pb-safe relative overflow-x-hidden selection:bg-zinc-800">
+      <header className="w-full px-4 pt-12 pb-6 flex justify-between items-start">
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -82,7 +82,7 @@ export const GlobalHomeHub = ({
         </motion.button>
       </header>
 
-      <main className="w-full max-w-md mx-auto px-4 flex flex-col gap-10 pb-12">
+      <main className="w-full px-4 flex flex-col gap-8 pb-12">
         <motion.section 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -118,25 +118,28 @@ export const GlobalHomeHub = ({
           className="flex flex-col gap-4"
         >
           <h2 className="text-zinc-100 font-semibold text-sm px-1">Modules</h2>
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {services.map((svc, i) => {
               const Icon = svc.icon;
               return (
                 <motion.button
                   key={svc.id}
                   whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 + i * 0.05 }}
                   onClick={() => navigate(svc.path)}
-                  className="bg-zinc-900/50 backdrop-blur-md border border-white/5 hover:bg-white/10 transition-colors rounded-[1.75rem] p-5 flex flex-col items-start gap-4 text-left outline-none relative overflow-hidden group"
+                  className="bg-zinc-900/50 backdrop-blur-md border border-white/5 hover:bg-white/10 transition-colors rounded-[1.75rem] p-5 flex flex-col items-center justify-center gap-3 text-center outline-none relative overflow-hidden group aspect-square"
                 >
-                  <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${svc.color} blur-[60px] opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none rounded-full translate-x-1/3 -translate-y-1/3`} />
+                  <div className={`absolute top-0 right-0 w-28 h-28 bg-gradient-to-br ${svc.color} blur-[50px] opacity-40 group-hover:opacity-70 transition-opacity pointer-events-none rounded-full translate-x-1/3 -translate-y-1/3`} />
                   
-                  <div className={`w-12 h-12 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-center relative z-10 ${svc.color.split(' ')[1]}`}>
-                    <Icon size={22} />
+                  <div className={`w-14 h-14 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-center relative z-10 ${svc.color.split(' ')[2]}`}>
+                    <Icon size={24} />
                   </div>
                   
-                  <div className="relative z-10 flex flex-col gap-1 mt-2">
-                    <h3 className="text-white font-semibold text-base">{svc.title}</h3>
-                    <p className="text-zinc-400 text-xs leading-tight pr-2">{svc.desc}</p>
+                  <div className="relative z-10 flex flex-col gap-0.5">
+                    <h3 className="text-white font-semibold text-sm">{svc.title}</h3>
+                    <p className="text-zinc-500 text-[11px] leading-tight">{svc.desc}</p>
                   </div>
                 </motion.button>
               );

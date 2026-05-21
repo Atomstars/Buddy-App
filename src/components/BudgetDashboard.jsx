@@ -26,7 +26,7 @@ const HeroCard = ({ monthlyStats, todayStats, weeklyStats }) => {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-[2rem] p-8 shadow-2xl border border-white/10 bg-gradient-to-br from-zinc-900/90 to-zinc-950 backdrop-blur-xl w-full max-w-md mx-auto"
+      className="relative overflow-hidden rounded-[2rem] p-8 shadow-2xl border border-white/10 bg-gradient-to-br from-zinc-900/90 to-zinc-950 backdrop-blur-xl w-full"
     >
       <div className="absolute top-0 right-0 w-64 h-64 bg-accent/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       
@@ -76,7 +76,7 @@ const QuickActions = ({ onQuickAdd }) => {
   ];
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+    <div className="flex flex-col gap-4 w-full">
       <h3 className="text-zinc-100 font-semibold text-base px-1">Quick Add</h3>
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 sm:gap-4">
         {quickCategories.map((cat, i) => {
@@ -110,7 +110,7 @@ const SmartInsights = ({ coach }) => {
   ];
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+    <div className="flex flex-col gap-4 w-full">
       <h3 className="text-zinc-100 font-semibold text-base px-1">AI Insights</h3>
       <div className="flex flex-col gap-4">
         {insights.map((insight, idx) => {
@@ -137,7 +137,7 @@ const RecentTransactions = ({ expenses }) => {
   
   if (!latest.length) {
     return (
-      <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+      <div className="flex flex-col gap-4 w-full">
         <h3 className="text-zinc-100 font-semibold text-base px-1">Recent Transactions</h3>
         <div className="text-center py-8 text-zinc-500 text-sm">No recent transactions.</div>
       </div>
@@ -145,7 +145,7 @@ const RecentTransactions = ({ expenses }) => {
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-md mx-auto">
+    <div className="flex flex-col gap-4 w-full">
       <div className="flex items-center justify-between px-1">
         <h3 className="text-zinc-100 font-semibold text-base">Recent Transactions</h3>
         <button className="text-sm text-zinc-400 hover:text-white flex items-center gap-1 transition-colors outline-none">

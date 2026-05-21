@@ -6,7 +6,7 @@ export const Header = ({ onProfileClick }) => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 backdrop-blur-2xl bg-black/70 border-b border-white/5 pt-safe w-full max-w-md mx-auto">
+    <header className="sticky top-0 z-50 flex items-center justify-between px-4 py-4 backdrop-blur-2xl bg-black/70 border-b border-white/5 pt-safe w-full">
       <div className="flex-1 flex justify-start">
         <button 
           onClick={toggleTheme}
