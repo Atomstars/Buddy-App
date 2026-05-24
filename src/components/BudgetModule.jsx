@@ -43,6 +43,7 @@ export const BudgetModule = ({
             selectedDate={selectedDate}
             onDateSelect={onDateSelect}
             onQuickAdd={onQuickAdd}
+            bills={[]}
           />
         );
       case 'analytics':

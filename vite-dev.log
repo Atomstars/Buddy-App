@@ -1,0 +1,129 @@
+
+> cell-budget-tracker@1.0.0 dev
+> vite --host 127.0.0.1 --port 5173
+
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m1599[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m5:43:24 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m5:43:24 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m5:43:32 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:43:38 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/Taskbar.jsx, /src/index.css[22m
+[2m5:43:49 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m5:46:14 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:46:26 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m5:52:46 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m_restore_backup_20260521-055245/index.html[22m
+[2m5:53:04 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m_restore_source_1581dd8/index.html[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mpackage.json[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mpuppeteer_test.js[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mSPEC.md[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mtest_supabase.js[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mvercel.json[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/main.py[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mvercel.json[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mpublic/icon.svg[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mbackend/requirements.txt[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mpublic/manifest.webmanifest[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mpublic/service-worker.js[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/main.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/components/UserMenu.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/AnalyticsPanel.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AuthScreen.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/BudgetModule.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/CategoryInsights.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/common.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/InvestingWidget.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/MyListModule.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/SplashScreen.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TaskHistoryModule.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TimetableModule.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/components/UserMenu.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msupabase/migrations/20260517000000_init.sql[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/components/BudgetModule.jsx, /src/components/TaskHistoryModule.jsx, /src/components/TimetableModule.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/components/BudgetModule.jsx, /src/components/ServiceHub.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css, /src/components/UserMenu.jsx[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msupabase/config.toml[22m
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msupabase/migrations/20260517000000_init.sql[22m
+Re-optimizing dependencies because lockfile has changed
+[2m5:53:22 am[22m [36m[1m[vite][22m[39m server restarted.
+[2m6:25:25 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m_preview_c12c628/index.html[22m
+[2m6:47:11 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AnalyticsPanel.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/main.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AnalyticsPanel.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AuthScreen.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/BudgetModule.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/CategoryInsights.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/InvestingWidget.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/MyListModule.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/SplashScreen.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TaskHistoryModule.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/TimetableModule.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/UserMenu.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/UserMenu.jsx, /src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/components/BudgetModule.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/UserMenu.jsx, /src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/components/AnalyticsPanel.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/components/BudgetModule.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/components/AnalyticsPanel.jsx, /src/components/BudgetModule.jsx, /src/components/TaskHistoryModule.jsx, /src/components/AssistantShell.jsx, /src/components/TimetableModule.jsx, /src/components/CategoryInsights.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/components/AnalyticsPanel.jsx, /src/components/BudgetModule.jsx, /src/components/InvestingWidget.jsx, /src/components/CategoryInsights.jsx[22m
+[2m6:47:12 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/UserMenu.jsx, /src/App.jsx, /src/components/AnalyticsPanel.jsx[22m
+Re-optimizing dependencies because lockfile has changed
+[2m6:47:13 am[22m [36m[1m[vite][22m[39m server restarted.
+[2m8:52:58 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2m_latest_main_pull/index.html[22m
+[2m8:53:07 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m8:53:07 am[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m8:53:07 am[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m8:53:07 am[22m [36m[1m[vite][22m[39m server restarted.
+[2m8:54:18 am[22m [36m[1m[vite][22m[39m [32m✨ new dependencies optimized: [33mreact-dom/client[32m[39m
+[2m8:54:18 am[22m [36m[1m[vite][22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m8:59:21 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m8:59:21 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mindex.html[22m
+[2m8:59:32 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m8:59:40 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m9:00:00 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m9:00:06 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m9:00:24 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m9:00:32 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/AppShell.jsx, /src/index.css[22m
+[2m9:00:54 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/FloatingBottomNavbar.jsx, /src/index.css[22m
+[2m9:00:55 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/layout/FloatingBottomNavbar.jsx, /src/index.css[22m
+[2m9:01:17 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m9:01:18 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m9:01:42 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/GlobalHomeHub.jsx, /src/index.css[22m
+[2m9:01:48 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2msrc/components/layout/Header.jsx[22m
+[2m9:02:02 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/SplashScreen.jsx, /src/index.css[22m
+[2m9:02:11 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AuthScreen.jsx, /src/index.css[22m
+[2m9:02:19 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mpublic/manifest.webmanifest[22m
+[2m9:02:19 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/AuthScreen.jsx, /src/index.css[22m
+[2m9:02:19 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/SplashScreen.jsx, /src/index.css[22m
+[2m9:02:20 am[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mpublic/manifest.webmanifest[22m
+[2m9:02:23 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m9:02:24 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m9:03:15 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/BudgetAnalytics.jsx, /src/index.css[22m
+[2m9:03:15 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/BudgetAnalytics.jsx, /src/index.css[22m
+[2m9:03:55 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/index.css[22m
+[2m9:04:39 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/index.css[22m
+[2m9:04:46 am[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/GlobalHomeHub.jsx, /src/index.css[22m

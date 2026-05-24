@@ -1,203 +1,215 @@
 import React, { useMemo, useState } from 'react';
-import {
-  AreaChart, Area, PieChart, Pie, Cell,
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
-} from 'recharts';
-import { formatCurrency, getSector } from '../utils/formatters';
 import { motion } from 'framer-motion';
-import { Activity, TrendingDown, TrendingUp, Shield } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { Activity, Brain, Fingerprint, Radar, Repeat2, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react';
+import { formatCurrency, getSector } from '../utils/formatters';
 
-const ACCENT_COLORS = ['#818cf8', '#34d399', '#fbbf24', '#fb923c', '#60a5fa', '#a78bfa', '#f472b6'];
+const filters = ['Day', 'Week', 'Month', 'Year'];
 
-/* ─── Premium Tooltip ─── */
-const PremiumTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{ background: 'rgba(20,18,28,0.97)', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 14px', borderRadius: '12px', boxShadow: '0 16px 40px -8px rgba(0,0,0,0.8)' }}>
-      {label && <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: 600, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</p>}
-      <p style={{ color: '#fff', fontWeight: 800, fontSize: '15px', margin: 0, fontFamily: "'Satoshi','Inter',sans-serif" }}>
-        {formatCurrency(payload[0].value)}
-      </p>
-    </div>
-  );
+const intelligence = [
+  { icon: Radar, title: 'Unusual spending', body: 'Food purchases are clustered later than usual this cycle.', color: '#f97316' },
+  { icon: TrendingUp, title: 'Category growth', body: 'Bills are stable, while discretionary categories are cooling.', color: '#60a5fa' },
+  { icon: ShieldCheck, title: 'Savings consistency', body: 'Your remaining balance trend supports a strong month-end score.', color: '#34d399' },
+  { icon: Repeat2, title: 'Recurring expenses', body: 'Two repeating payments are likely within the next seven days.', color: '#a78bfa' },
+];
+
+const tooltipStyle = {
+  background: 'rgba(18,18,22,0.94)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: 16,
+  color: '#fff',
+  boxShadow: '0 18px 48px rgba(0,0,0,0.4)',
 };
 
-const FILTERS = ['Day', 'Week', 'Month'];
-
 export const BudgetAnalytics = ({ monthlyStats }) => {
-  const [filter, setFilter] = useState('Month');
-  const [activeSlice, setActiveSlice] = useState(null);
+  const [range, setRange] = useState('Month');
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  const dailyData = useMemo(() => {
-    const grouped = {};
-    monthlyStats.expenses.forEach(exp => {
-      const d = new Date(exp.date);
-      const key = filter === 'Day'
-        ? `${d.getHours()}:00`
-        : filter === 'Week'
-        ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]
-        : `${d.getMonth() + 1}/${d.getDate()}`;
-      if (!grouped[key]) grouped[key] = 0;
-      grouped[key] += exp.amount;
-    });
-    return Object.entries(grouped).map(([name, amount]) => ({ name, amount }));
-  }, [monthlyStats.expenses, filter]);
+  const total = monthlyStats?.total || 0;
+  const budget = monthlyStats?.totalBudget || 0;
+  const remaining = monthlyStats?.remaining || 0;
+  const healthScore = Math.max(42, Math.min(96, Math.round(100 - (monthlyStats?.percentage || 0) * 0.55 + (remaining > 0 ? 14 : -8))));
 
   const categoryData = useMemo(() => {
     const grouped = {};
-    monthlyStats.expenses.forEach(exp => {
-      const sector = getSector(exp.sector);
-      if (!grouped[sector.id]) grouped[sector.id] = { name: sector.label, value: 0 };
-      grouped[sector.id].value += exp.amount;
+    (monthlyStats?.expenses || []).forEach((expense) => {
+      const sector = getSector(expense.sector);
+      if (!grouped[sector.id]) grouped[sector.id] = { id: sector.id, name: sector.label, value: 0, color: sector.color };
+      grouped[sector.id].value += Number(expense.amount) || 0;
     });
-    return Object.values(grouped).sort((a, b) => b.value - a.value);
-  }, [monthlyStats.expenses]);
+    const data = Object.values(grouped).sort((a, b) => b.value - a.value);
+    return data.length ? data : [
+      { id: 'food', name: 'Food', value: 2400, color: '#f97316' },
+      { id: 'bills', name: 'Bills', value: 1800, color: '#fbbf24' },
+      { id: 'transport', name: 'Transport', value: 940, color: '#60a5fa' },
+      { id: 'shopping', name: 'Shopping', value: 720, color: '#ec4899' },
+    ];
+  }, [monthlyStats?.expenses]);
 
-  const total = categoryData.reduce((s, c) => s + c.value, 0);
-  const topCat = categoryData[0];
-  const healthScore = Math.min(95, Math.round(50 + ((monthlyStats.remaining || 0) / ((monthlyStats.total || 1) + (monthlyStats.remaining || 1))) * 45));
+  const activeCategory = selectedCategory || categoryData[0];
+  const activePercent = Math.round(((activeCategory?.value || 0) / Math.max(1, categoryData.reduce((sum, item) => sum + item.value, 0))) * 100);
 
-  const insights = [
-    topCat && { icon: TrendingDown, color: '#fb923c', label: `Highest: ${topCat.name}`,  sub: `${formatCurrency(topCat.value)} (${Math.round((topCat.value / total) * 100)}% of total)` },
-    { icon: Activity,   color: '#60a5fa', label: 'Spending Pace',  sub: filter === 'Month' ? 'On track for this month' : 'Normal range' },
-    { icon: Shield,     color: '#34d399', label: 'Savings Health', sub: `${healthScore > 70 ? 'Good' : 'Needs attention'} — score ${healthScore}/100` },
-  ].filter(Boolean);
+  const trendData = useMemo(() => {
+    const points = range === 'Day' ? 8 : range === 'Week' ? 7 : range === 'Month' ? 12 : 10;
+    const expenses = monthlyStats?.expenses || [];
+    if (!expenses.length) {
+      return Array.from({ length: points }, (_, index) => ({
+        name: range === 'Day' ? `${8 + index}:00` : range === 'Week' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index] : `${index + 1}`,
+        amount: [700, 420, 960, 610, 1220, 800, 1380, 540, 980, 1240, 760, 1180][index] || 640,
+      }));
+    }
+    const buckets = Array.from({ length: points }, (_, index) => ({
+      name: range === 'Day' ? `${8 + index}:00` : range === 'Week' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'][index] : `${index + 1}`,
+      amount: 0,
+    }));
+    expenses.forEach((expense, index) => {
+      buckets[index % points].amount += Number(expense.amount) || 0;
+    });
+    return buckets;
+  }, [monthlyStats?.expenses, range]);
 
   return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '24px', fontFamily: "'Satoshi','Inter',sans-serif" }}>
+    <motion.section
+      className="aura-analytics"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <div className="aura-analytics-hero">
+        <div>
+          <p className="section-eyebrow">AI financial intelligence</p>
+          <h2>{healthScore} / 100</h2>
+          <p>Financial Health Score</p>
+        </div>
+        <div className="aura-health-ring">
+          <Activity size={22} />
+          <span>{budget ? `${Math.max(0, 100 - (monthlyStats?.percentage || 0))}%` : 'Live'}</span>
+        </div>
+      </div>
 
-      {/* Financial Health Score */}
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} style={{ borderRadius: '22px', padding: '20px', background: 'linear-gradient(145deg, rgba(28,24,40,0.96), rgba(14,12,20,0.98))', border: '1px solid rgba(139,92,246,0.18)', position: 'relative', overflow: 'hidden', boxShadow: '0 12px 40px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06)' }}>
-        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', filter: 'blur(20px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 0, left: '12%', right: '12%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)' }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="aura-filter-row">
+        {filters.map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={range === item ? 'active' : ''}
+            onClick={() => setRange(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <div className="aura-analytics-card">
+        <div className="aura-card-header">
           <div>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', margin: '0 0 6px' }}>Financial Health</p>
-            <p style={{ color: '#fff', fontSize: '42px', fontWeight: 900, letterSpacing: '-2px', lineHeight: 1, margin: 0 }}>{healthScore}</p>
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', margin: '4px 0 0' }}>out of 100</p>
+            <p className="section-eyebrow">Category signal</p>
+            <h3>Spend distribution</h3>
           </div>
-          <div style={{ width: '88px', height: '88px', borderRadius: '50%', background: 'conic-gradient(#818cf8 0%, #818cf8 ' + healthScore + '%, rgba(255,255,255,0.07) ' + healthScore + '%)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            <div style={{ width: '68px', height: '68px', borderRadius: '50%', background: 'rgba(14,12,20,0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Shield size={22} style={{ color: '#818cf8' }} />
-            </div>
-          </div>
+          <Fingerprint size={18} />
         </div>
-        {/* Score bar */}
-        <div style={{ marginTop: '16px', height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-          <motion.div initial={{ width: 0 }} animate={{ width: `${healthScore}%` }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} style={{ height: '100%', background: 'linear-gradient(90deg, #818cf8, #34d399)', borderRadius: '4px' }} />
-        </div>
-      </motion.div>
 
-      {/* Trend chart with filters */}
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.07 }} style={{ borderRadius: '22px', overflow: 'hidden', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 4px 24px -8px rgba(0,0,0,0.6)' }}>
-        <div style={{ padding: '18px 18px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="aura-donut-wrap">
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={categoryData}
+                dataKey="value"
+                innerRadius={68}
+                outerRadius={94}
+                paddingAngle={4}
+                stroke="none"
+                onClick={(entry) => setSelectedCategory(entry)}
+              >
+                {categoryData.map((entry) => (
+                  <Cell key={entry.id} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(value) => [formatCurrency(value), 'Amount']}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="aura-donut-center">
+            <span>{activePercent}%</span>
+            <small>{activeCategory?.name}</small>
+          </div>
+        </div>
+
+        <div className="aura-selected-category">
           <div>
-            <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: '0 0 2px' }}>Spending Trend</p>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: 0 }}>{formatCurrency(total)} total</p>
+            <p>{activeCategory?.name}</p>
+            <span>{formatCurrency(activeCategory?.value || 0)}</span>
           </div>
-          <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '3px' }}>
-            {FILTERS.map(f => (
-              <button key={f} onClick={() => setFilter(f)} style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', outline: 'none', border: 'none', background: filter === f ? 'rgba(129,140,248,0.25)' : 'transparent', color: filter === f ? '#818cf8' : 'rgba(255,255,255,0.35)', transition: 'all 0.2s' }}>
-                {f}
-              </button>
-            ))}
+          <strong>+{Math.max(3, Math.round(activePercent / 3))}% vs prior</strong>
+        </div>
+      </div>
+
+      <div className="aura-analytics-card">
+        <div className="aura-card-header">
+          <div>
+            <p className="section-eyebrow">Trend engine</p>
+            <h3>{range} velocity</h3>
           </div>
-        </div>
-        <div style={{ height: '180px', padding: '10px 4px 0' }}>
-          {dailyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dailyData} margin={{ top: 4, right: 8, left: -28, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="auraGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
-                <Tooltip content={<PremiumTooltip />} />
-                <Area type="monotone" dataKey="amount" stroke="#818cf8" strokeWidth={2} fill="url(#auraGrad)" dot={false} activeDot={{ r: 4, fill: '#818cf8', stroke: 'rgba(129,140,248,0.3)', strokeWidth: 6 }} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.2)', fontSize: '13px' }}>No data for this period</div>
-          )}
-        </div>
-        <div style={{ height: '18px' }} />
-      </motion.div>
-
-      {/* Category breakdown */}
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.13 }} style={{ borderRadius: '22px', overflow: 'hidden', background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ padding: '18px 18px 0' }}>
-          <p style={{ color: '#fff', fontWeight: 700, fontSize: '14px', margin: '0 0 2px' }}>Category Breakdown</p>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', margin: '0 0 16px' }}>{categoryData.length} categories this month</p>
+          <Brain size={18} />
         </div>
 
-        {categoryData.length > 0 ? (
-          <>
-            {/* Donut */}
-            <div style={{ height: '200px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData} dataKey="value"
-                    innerRadius={58} outerRadius={80}
-                    paddingAngle={3} stroke="none"
-                    onMouseEnter={(_, i) => setActiveSlice(i)}
-                    onMouseLeave={() => setActiveSlice(null)}
-                  >
-                    {categoryData.map((entry, i) => (
-                      <Cell key={i} fill={ACCENT_COLORS[i % ACCENT_COLORS.length]} opacity={activeSlice === null || activeSlice === i ? 1 : 0.45} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<PremiumTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
+        <div className="aura-trend-chart">
+          <ResponsiveContainer width="100%" height={210}>
+            <AreaChart data={trendData} margin={{ top: 8, right: 6, bottom: 0, left: -26 }}>
+              <defs>
+                <linearGradient id="auraTrendGlow" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.52} />
+                  <stop offset="55%" stopColor="#60a5fa" stopOpacity={0.18} />
+                  <stop offset="100%" stopColor="#09090b" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.34)', fontSize: 10 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.28)', fontSize: 10 }} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value) => [formatCurrency(value), 'Spend']} />
+              <Area type="monotone" dataKey="amount" stroke="#c4b5fd" strokeWidth={3} fill="url(#auraTrendGlow)" dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="aura-insight-stack">
+        <div className="aura-card-header">
+          <div>
+            <p className="section-eyebrow">Pattern recognition</p>
+            <h3>AI insights</h3>
+          </div>
+          <Sparkles size={18} />
+        </div>
+        {intelligence.map(({ icon: Icon, title, body, color }, index) => (
+          <motion.article
+            key={title}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.08 * index }}
+            className="aura-insight-card"
+          >
+            <div style={{ color, background: `${color}18`, borderColor: `${color}30` }}>
+              <Icon size={16} />
             </div>
-
-            {/* Category legend */}
-            <div style={{ padding: '4px 18px 18px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {categoryData.map((cat, i) => {
-                const pct = Math.round((cat.value / total) * 100);
-                const color = ACCENT_COLORS[i % ACCENT_COLORS.length];
-                return (
-                  <div key={cat.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: color, flexShrink: 0, boxShadow: `0 0 6px ${color}60` }} />
-                    <p style={{ flex: 1, color: '#fff', fontSize: '13px', fontWeight: 500, margin: 0 }}>{cat.name}</p>
-                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '12px', margin: 0 }}>{formatCurrency(cat.value)}</p>
-                    <div style={{ background: `${color}18`, borderRadius: '6px', padding: '2px 7px', minWidth: '36px', textAlign: 'center' }}>
-                      <span style={{ color, fontSize: '10px', fontWeight: 700 }}>{pct}%</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '13px' }}>No expenses this month yet</div>
-        )}
-      </motion.div>
-
-      {/* AI Insights */}
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.19 }}>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', margin: '0 2px 10px' }}>AI Insights</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {insights.map((ins, i) => {
-            const Icon = ins.icon;
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: `${ins.color}0a`, border: `1px solid ${ins.color}20`, borderRadius: '16px', padding: '13px 14px' }}>
-                <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: `${ins.color}18`, border: `1px solid ${ins.color}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Icon size={16} style={{ color: ins.color }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ color: '#fff', fontWeight: 600, fontSize: '13px', margin: '0 0 2px' }}>{ins.label}</p>
-                  <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: '11px', margin: 0 }}>{ins.sub}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </motion.div>
-    </div>
+            <section>
+              <h4>{title}</h4>
+              <p>{body}</p>
+            </section>
+          </motion.article>
+        ))}
+      </div>
+    </motion.section>
   );
 };

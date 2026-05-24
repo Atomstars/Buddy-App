@@ -1,6 +1,6 @@
 {
-  "name": "Budget Buddy",
-  "short_name": "Budget Buddy",
+  "name": "Aura",
+  "short_name": "Aura",
   "description": "A calm INR budget tracker with daily coaching, streaks, and offline phone support.",
   "start_url": "/",
   "scope": "/",

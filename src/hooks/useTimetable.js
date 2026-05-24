@@ -25,7 +25,7 @@ export const useTimetable = () => {
         done: task.done,
         createdAt: task.created_at
       }));
-      setTasks(formatted.sort((a, b) => a.time.localeCompare(b.time)));
+      setTasks(formatted.sort((a, b) => (a.time || '').localeCompare(b.time || '')));
     }
     setLoading(false);
   };
@@ -64,7 +64,7 @@ export const useTimetable = () => {
             createdAt: dbTask.created_at
           },
           ...current,
-        ].sort((a, b) => a.time.localeCompare(b.time))
+        ].sort((a, b) => (a.time || '').localeCompare(b.time || ''))
       );
     }
   };
@@ -149,7 +149,7 @@ export const useTimetable = () => {
           createdAt: dbTask.created_at
         },
         ...current.filter(t => t.id !== id)
-      ].sort((a, b) => a.time.localeCompare(b.time)));
+      ].sort((a, b) => (a.time || '').localeCompare(b.time || '')));
     }
   };
 
