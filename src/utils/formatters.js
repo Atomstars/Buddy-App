@@ -2,60 +2,15 @@ export const INR_CURRENCY = 'INR';
 export const INR_LOCALE = 'en-IN';
 
 export const SECTORS = [
-  {
-    id: 'groceries',
-    label: 'Groceries',
-    shortLabel: 'Groceries',
-    color: '#16A34A', // Green
-  },
-  {
-    id: 'fruits',
-    label: 'Fruits & Vegetables',
-    shortLabel: 'Produce',
-    color: '#84CC16', // Lime
-  },
-  {
-    id: 'food',
-    label: 'Food & Coffee',
-    shortLabel: 'Food',
-    color: '#EA580C', // Orange
-  },
-  {
-    id: 'transport',
-    label: 'Transport & Fuel',
-    shortLabel: 'Transport',
-    color: '#3B82F6', // Blue
-  },
-  {
-    id: 'shopping',
-    label: 'Shopping',
-    shortLabel: 'Shopping',
-    color: '#EC4899', // Pink
-  },
-  {
-    id: 'bills',
-    label: 'Bills & Utilities',
-    shortLabel: 'Bills',
-    color: '#EAB308', // Yellow
-  },
-  {
-    id: 'health',
-    label: 'Health & Wellness',
-    shortLabel: 'Health',
-    color: '#06B6D4', // Cyan
-  },
-  {
-    id: 'fun',
-    label: 'Fun & Weekends',
-    shortLabel: 'Fun',
-    color: '#7C3AED', // Purple
-  },
-  {
-    id: 'other',
-    label: 'Other',
-    shortLabel: 'Other',
-    color: '#6B7280', // Gray
-  },
+  { id: 'food', label: 'Food & Dining', shortLabel: 'Food', color: '#EA580C' },
+  { id: 'transport', label: 'Transport & Commute', shortLabel: 'Transport', color: '#3B82F6' },
+  { id: 'shopping', label: 'Shopping & Retail', shortLabel: 'Shopping', color: '#EC4899' },
+  { id: 'bills', label: 'Bills & Utilities', shortLabel: 'Bills', color: '#EAB308' },
+  { id: 'emi', label: 'EMI & Loans', shortLabel: 'EMI', color: '#EF4444' },
+  { id: 'subscription', label: 'Subscriptions', shortLabel: 'Subscription', color: '#8B5CF6' },
+  { id: 'health', label: 'Health & Wellness', shortLabel: 'Health', color: '#06B6D4' },
+  { id: 'groceries', label: 'Groceries', shortLabel: 'Groceries', color: '#16A34A' },
+  { id: 'other', label: 'Other', shortLabel: 'Other', color: '#6B7280' },
 ];
 
 export const formatCurrency = (amount = 0, options = {}) => {

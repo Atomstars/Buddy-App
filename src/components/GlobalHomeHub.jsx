@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Flame, Target, Zap, ArrowRight, Sparkles, Bell, CalendarCheck, CheckCircle2 } from 'lucide-react';
+import { User, Flame, Camera, ArrowRight, Sparkles, Bell, CalendarCheck, CameraIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/formatters';
 import { FloatingBottomNavbar } from './layout/FloatingBottomNavbar';
 
 const item = (delay = 0) => ({
-  initial: { opacity: 0, y: 18 },
+  initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.45, delay, ease: [0.25, 0.46, 0.45, 0.94] },
+  transition: { duration: 0.5, delay, ease: [0.25, 0.46, 0.45, 0.94] },
 });
 
 export const GlobalHomeHub = ({
@@ -16,7 +16,6 @@ export const GlobalHomeHub = ({
   monthlyRemaining,
   tasksToday,
   streakCount = 0,
-  visionProgress = 0,
   onProfileClick,
   onFABPress,
   bills = [],
@@ -51,130 +50,123 @@ export const GlobalHomeHub = ({
   const pendingTotal = pendingBills.reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
-    <div className="aura-home" style={{ position: 'relative', paddingBottom: '160px' }}>
+    <div className="aura-home" style={{ position: 'relative', paddingBottom: '160px', background: 'var(--bg)', minHeight: '100vh', fontFamily: 'var(--font-sans)' }}>
+      {/* ── Background Glow Effects ── */}
+      <div style={{ position: 'fixed', top: -100, left: -50, width: 300, height: 300, background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', top: '40%', right: -100, width: 400, height: 400, background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }} />
+
       {/* ── Header ── */}
-      <motion.header style={{ padding: '24px 20px 16px', background: 'var(--bg)' }} {...item(0)}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{greeting}</p>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>
-              {firstName}
-            </h1>
-          </div>
-          <motion.button onClick={onProfileClick} whileTap={{ scale: 0.9 }} style={{ width: 44, height: 44, borderRadius: 22, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', outline: 'none' }}>
-            <User size={20} style={{ color: '#fff' }} />
-          </motion.button>
+      <motion.header style={{ position: 'relative', zIndex: 10, padding: 'max(48px, env(safe-area-inset-top, 48px)) 24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }} {...item(0)}>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.15em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 4 }}>{greeting}</p>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>
+            {firstName}.
+          </h1>
         </div>
+        <motion.button onClick={onProfileClick} whileTap={{ scale: 0.9 }} style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', WebkitTapHighlightColor: 'transparent', outline: 'none', backdropFilter: 'blur(10px)' }}>
+          <User size={22} style={{ color: '#fff' }} />
+        </motion.button>
       </motion.header>
 
-      <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{ padding: '0 24px', display: 'flex', flexDirection: 'column', gap: 20, position: 'relative', zIndex: 10 }}>
         
-        {/* ── Overview Card ── */}
-        <motion.div {...item(0.07)}>
-          <div style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', borderRadius: 28, padding: 24, border: '1px solid rgba(255,255,255,0.08)', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -100, right: -100, width: 250, height: 250, background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%)', filter: 'blur(30px)', pointerEvents: 'none' }} />
-            
-            <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Available Balance</p>
-            <p style={{ fontSize: 40, fontWeight: 800, color: '#fff', letterSpacing: '-1px', marginBottom: 20 }}>{formatCurrency(Math.max(0, monthlyRemaining || 0))}</p>
-            
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 600, marginBottom: 8 }}>
-                <span>{formatCurrency(monthlySpent)} spent</span>
-                <span>of {formatCurrency(monthlyTarget)}</span>
-              </div>
-              <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', background: spendPct > 80 ? '#f43f5e' : spendPct > 60 ? '#f59e0b' : '#6366f1', width: `${spendPct}%`, borderRadius: 4 }} />
+        {/* ── Overview Card (Glassmorphism) ── */}
+        <motion.div {...item(0.1)}>
+          <div style={{ 
+            background: 'linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)', 
+            backdropFilter: 'blur(24px)', 
+            WebkitBackdropFilter: 'blur(24px)',
+            borderRadius: 32, 
+            padding: 28, 
+            border: '1px solid rgba(255,255,255,0.08)', 
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.02em' }}>Safe to Spend</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(251,146,60,0.15)', padding: '4px 10px', borderRadius: 100, border: '1px solid rgba(251,146,60,0.3)' }}>
+                <Flame size={12} style={{ color: '#fb923c' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#fb923c' }}>{streakCount} Day Streak</span>
               </div>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 16 }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}><Flame size={12} style={{ color: '#fb923c' }} /> STREAK</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginTop: 2 }}>{streakCount}d</div>
+            <p style={{ fontSize: 44, fontWeight: 800, color: '#fff', letterSpacing: '-1.5px', marginBottom: 24, textShadow: '0 4px 20px rgba(255,255,255,0.1)' }}>
+              {formatCurrency(Math.max(0, monthlyRemaining || 0))}
+            </p>
+            
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginBottom: 10 }}>
+                <span>{formatCurrency(monthlySpent)} spent</span>
+                <span>{Math.round(spendPct)}%</span>
               </div>
-              <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}><Target size={12} style={{ color: '#60a5fa' }} /> TASKS</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginTop: 2 }}>{tasksToday || 0}</div>
-              </div>
-              <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}><Zap size={12} style={{ color: '#fbbf24' }} /> VISION</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginTop: 2 }}>{visionProgress}%</div>
+              <div style={{ height: 8, background: 'rgba(255,255,255,0.05)', borderRadius: 100, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.5)' }}>
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${spendPct}%` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  style={{ height: '100%', background: spendPct > 80 ? 'linear-gradient(90deg, #f43f5e, #fb7185)' : spendPct > 60 ? 'linear-gradient(90deg, #f59e0b, #fbbf24)' : 'linear-gradient(90deg, #6366f1, #a78bfa)', borderRadius: 100 }} 
+                />
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* ── Daily Focus (Smart Actionable Insight) ── */}
-        <motion.div {...item(0.12)}>
-          <div style={{ background: 'rgba(99,102,241,0.08)', borderRadius: 20, padding: 16, border: '1px solid rgba(99,102,241,0.2)', position: 'relative', overflow: 'hidden' }}>
+        {/* ── AI Vision Card ── */}
+        <motion.div {...item(0.2)}>
+          <div onClick={onFABPress} style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.05) 100%)',
+            borderRadius: 24, padding: 20, border: '1px solid rgba(99,102,241,0.3)', position: 'relative', overflow: 'hidden',
+            cursor: 'pointer', boxShadow: '0 12px 30px rgba(99,102,241,0.15)'
+          }}>
+            <div style={{ position: 'absolute', right: -10, top: -10, opacity: 0.1, filter: 'blur(2px)' }}>
+              <Sparkles size={100} />
+            </div>
+            
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
               <div>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Daily Focus</p>
-                <p style={{ fontSize: 16, fontWeight: 600, color: '#fff', lineHeight: 1.4 }}>
-                  {spendPct > 80 ? "Avoid unnecessary spending today, you are near budget." : "Log every expense today 💡"}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <Sparkles size={18} style={{ color: '#818cf8' }} />
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.02em' }}>AI Vision Extraction</h3>
+                </div>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, maxWidth: '80%' }}>
+                  Upload a screenshot of PhonePe, GPay, or a receipt. Aura will categorize it automatically.
                 </p>
+              </div>
+              
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(99,102,241,0.4)', flexShrink: 0 }}>
+                <CameraIcon size={20} color="white" />
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* ── Productivity + Money Combined ── */}
-        <motion.div {...item(0.16)} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div onClick={() => navigate('/schedule')} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: 16, border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(96,165,250,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <CalendarCheck size={16} style={{ color: '#60a5fa' }} />
+        {/* ── Schedules & Upcoming Bills ── */}
+        <motion.div {...item(0.3)} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div onClick={() => navigate('/schedule')} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 24, padding: 20, border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CalendarCheck size={18} style={{ color: '#60a5fa' }} />
+              </div>
+              <ArrowRight size={16} style={{ color: 'rgba(255,255,255,0.2)' }} />
             </div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{tasksToday} Tasks</p>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>scheduled today</p>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{tasksToday} <span style={{fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: 600}}>Tasks</span></p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>Scheduled today</p>
           </div>
           
-          <div onClick={() => navigate('/budget')} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: 16, border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(244,63,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bell size={16} style={{ color: '#fb7185' }} />
+          <div onClick={() => navigate('/budget')} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 24, padding: 20, border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bell size={18} style={{ color: '#fb7185' }} />
               </div>
               {overdueCount > 0 && (
-                <div style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.3)', padding: '2px 6px', borderRadius: 6, color: '#fb7185', fontSize: 10, fontWeight: 700 }}>
-                  {overdueCount} Overdue
+                <div style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.3)', padding: '4px 8px', borderRadius: 8, color: '#fb7185', fontSize: 10, fontWeight: 700, textTransform: 'uppercase' }}>
+                  {overdueCount} Due
                 </div>
               )}
             </div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginTop: 'auto' }}>{nextBill ? nextBill.title : 'All Paid'}</p>
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-              {nextBill ? `${formatCurrency(pendingTotal)} pending` : 'No urgent bills'}
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nextBill ? nextBill.title : 'All Clear'}</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+              {nextBill ? `${formatCurrency(pendingTotal)} pending` : 'No upcoming bills'}
             </p>
-          </div>
-        </motion.div>
-
-        {/* ── Vision Section (Premium Locked) ── */}
-        <motion.div {...item(0.22)}>
-          <div onClick={() => navigate('/vision')} style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)',
-            borderRadius: 28, padding: 24, border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden',
-            cursor: 'pointer'
-          }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)' }} />
-            <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.1 }}>
-              <Sparkles size={120} />
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <Sparkles size={18} style={{ color: '#fbbf24' }} />
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.02em' }}>Aura Vision</h3>
-              <div style={{ background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: 100 }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase' }}>Coming Soon</span>
-              </div>
-            </div>
-            
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: 16 }}>
-              AI-powered life planning. Analyzes your spending, habits, and schedules for long-term guidance.
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', color: '#fff', fontSize: 13, fontWeight: 600 }}>
-              Unlock Future Forecasting <ArrowRight size={14} style={{ marginLeft: 6 }} />
-            </div>
           </div>
         </motion.div>
 
