@@ -7,6 +7,7 @@ import { api } from '../services/api';
 
 export const AddExpenseModal = ({ isOpen, onClose, onSave, onAIAssistData }) => {
     const [mode, setMode] = useState('menu'); // 'menu', 'manual', 'loading'
+    const [isSaving, setIsSaving] = useState(false);
     const [amount, setAmount] = useState('');
     const [merchant, setMerchant] = useState('');
     const [sector, setSector] = useState('other');
@@ -37,16 +38,25 @@ export const AddExpenseModal = ({ isOpen, onClose, onSave, onAIAssistData }) => 
         }
     };
 
-    const handleManualSubmit = (e) => {
+    const handleManualSubmit = async (e) => {
         e.preventDefault();
         const parsedAmount = parseCurrencyInput(amount);
         if (parsedAmount <= 0) return;
-        onSave({ amount: parsedAmount, merchant, sector, note, date, confidence: 100, is_recurring: false });
-        onClose();
-        setMode('menu');
-        setAmount('');
-        setMerchant('');
-        setNote('');
+        
+        setIsSaving(true);
+        try {
+            await onSave({ amount: parsedAmount, merchant, sector, note, date, confidence: 100, is_recurring: false });
+            onClose();
+            setMode('menu');
+            setAmount('');
+            setMerchant('');
+            setNote('');
+        } catch (error) {
+            console.error('Save failed', error);
+            alert('Failed to save transaction. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -144,8 +154,8 @@ export const AddExpenseModal = ({ isOpen, onClose, onSave, onAIAssistData }) => 
                                     <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '16px', borderRadius: 16, color: '#fff', fontSize: 16, outline: 'none', colorScheme: 'dark' }} />
                                 </div>
 
-                                <motion.button type="submit" whileTap={{ scale: 0.96 }} style={{ width: '100%', padding: '18px', borderRadius: 16, marginTop: 8, background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#fff', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px rgba(99,102,241,0.3)' }}>
-                                    Save Transaction
+                                <motion.button type="submit" disabled={isSaving} whileTap={{ scale: 0.96 }} style={{ width: '100%', padding: '18px', borderRadius: 16, marginTop: 8, background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: '#fff', fontSize: 16, fontWeight: 700, border: 'none', cursor: isSaving ? 'not-allowed' : 'pointer', boxShadow: '0 8px 24px rgba(99,102,241,0.3)', opacity: isSaving ? 0.7 : 1 }}>
+                                    {isSaving ? 'Saving...' : 'Save Transaction'}
                                 </motion.button>
                             </form>
                         )}

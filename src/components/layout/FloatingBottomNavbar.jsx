@@ -86,18 +86,18 @@ const TabButton = ({ tab, Icon, isActive, onClick }) => (
     whileTap={{ scale: 0.9 }}
     style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      background: 'none', border: 'none', padding: '8px 4px', cursor: 'pointer',
-      WebkitTapHighlightColor: 'transparent', outline: 'none', position: 'relative'
+      background: 'none', border: 'none', padding: '12px 4px 16px 4px', cursor: 'pointer',
+      WebkitTapHighlightColor: 'transparent', outline: 'none', position: 'relative', minHeight: 52
     }}
     aria-label={tab.label}
   >
     <motion.div
       style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
-      animate={{ scale: isActive ? 1.05 : 1, y: isActive ? -2 : 0 }}
+      animate={{ scale: isActive ? 1.05 : 1, y: isActive ? -4 : 0 }}
       transition={{ type: 'spring', stiffness: 400, damping: 28 }}
     >
       <Icon size={22} strokeWidth={isActive ? 2.5 : 2} style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.4)', transition: 'color 0.2s ease' }} />
-      <span style={{ fontSize: 10, fontWeight: 700, color: isActive ? '#fff' : 'rgba(255,255,255,0.4)', opacity: isActive ? 1 : 0, transition: 'all 0.2s ease', position: 'absolute', top: 28 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', opacity: isActive ? 1 : 0, transition: 'all 0.2s ease', position: 'absolute', top: 26, whiteSpace: 'nowrap' }}>
         {tab.label}
       </span>
     </motion.div>

@@ -5,18 +5,43 @@ require('dotenv').config();
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://rufnqsyejgtxiizklcow.supabase.co';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'sb_publishable_syfc-S_FoUPs4q0JPP0eSA_ixmJm_AJ';
-const supabase = createClient(supabaseUrl, supabaseKey);
+
+const getSupabaseClient = (req) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+        return createClient(supabaseUrl, supabaseKey, {
+            global: { headers: { Authorization: authHeader } }
+        });
+    }
+    return createClient(supabaseUrl, supabaseKey);
+};
+
+// Helper to map DB 'expenses' to frontend 'transaction' format
+const mapToTransaction = (exp) => ({
+    id: exp.id,
+    userId: exp.user_id,
+    amount: exp.amount,
+    merchant: exp.note || '',
+    category: exp.sector,
+    date: exp.date,
+    createdAt: exp.created_at
+});
 
 // Get all transactions
 router.get('/', async (req, res) => {
     try {
-        const { data, error } = await supabase
-            .from('transactions')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { userId } = req.query;
+        const supabase = getSupabaseClient(req);
+        let query = supabase.from('expenses').select('*').order('date', { ascending: false });
+        
+        if (userId) {
+            query = query.eq('user_id', userId);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
-        res.json(data);
+        res.json(data.map(mapToTransaction));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -25,26 +50,26 @@ router.get('/', async (req, res) => {
 // Add a new transaction
 router.post('/', async (req, res) => {
     try {
-        const { amount, merchant, date, type, category, confidence, is_recurring, notes } = req.body;
+        const { userId, amount, merchant, category, date } = req.body;
         
+        if (!userId) return res.status(400).json({ error: 'userId is required' });
+        
+        const supabase = getSupabaseClient(req);
         const { data, error } = await supabase
-            .from('transactions')
+            .from('expenses')
             .insert([
                 { 
+                    user_id: userId,
                     amount, 
-                    merchant, 
+                    note: merchant || '', 
                     date, 
-                    type, 
-                    category,
-                    ai_confidence: confidence || 100,
-                    is_recurring: is_recurring || false,
-                    notes: notes || ''
+                    sector: category || 'other'
                 }
             ])
             .select();
 
         if (error) throw error;
-        res.json(data[0]);
+        res.json(mapToTransaction(data[0]));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -54,28 +79,27 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { amount, merchant, date, type, category, confidence, is_recurring, notes } = req.body;
+        const { userId, amount, merchant, category, date } = req.body;
         
-        const { data, error } = await supabase
-            .from('transactions')
-            .update({ 
-                amount, 
-                merchant, 
-                date, 
-                type, 
-                category,
-                ai_confidence: confidence,
-                is_recurring,
-                notes
-            })
-            .eq('id', id)
-            .select();
+        const supabase = getSupabaseClient(req);
+        let query = supabase.from('expenses').update({ 
+            amount, 
+            note: merchant, 
+            date, 
+            sector: category 
+        });
+
+        if (userId) {
+            query = query.eq('user_id', userId);
+        }
+        
+        const { data, error } = await query.eq('id', id).select();
 
         if (error) throw error;
         if (!data || data.length === 0) {
             return res.status(404).json({ error: 'Transaction not found' });
         }
-        res.json(data[0]);
+        res.json(mapToTransaction(data[0]));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -85,10 +109,15 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { error } = await supabase
-            .from('transactions')
-            .delete()
-            .eq('id', id);
+        const { userId } = req.query;
+        
+        const supabase = getSupabaseClient(req);
+        let query = supabase.from('expenses').delete().eq('id', id);
+        if (userId) {
+            query = query.eq('user_id', userId);
+        }
+
+        const { error } = await query;
 
         if (error) throw error;
         res.json({ success: true });
