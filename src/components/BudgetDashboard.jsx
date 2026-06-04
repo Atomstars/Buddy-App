@@ -5,12 +5,13 @@ import {
   Receipt, HeartPulse, Sparkles, Paperclip, Search, ArrowUpDown,
   Pencil, Trash2, PieChart as PieChartIcon, Activity, ChevronDown,
   ChevronRight, Plus, Check, ChevronLeft, Settings, LayoutGrid,
-  CreditCard, BarChart3, CalendarDays,
+  CreditCard, BarChart3, CalendarDays, BarChart2, Target
 } from 'lucide-react';
 import { formatCurrency, SECTORS } from '../utils/formatters';
 import {
   AreaChart, Area, XAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
-  PieChart, Pie, Cell,
+  PieChart, Pie, Cell, BarChart, Bar, Radar, RadarChart, PolarGrid,
+  PolarAngleAxis, PolarRadiusAxis, CartesianGrid, YAxis, ComposedChart, Line
 } from 'recharts';
 import { AuraIntelligenceSheet } from './AuraIntelligenceSheet';
 import { CategoryDetailModal } from './CategoryDetailModal';
@@ -203,12 +204,54 @@ export const BudgetDashboard = ({
   }));
 
   const timelineDataMap = {};
-  filteredExpenses.forEach(exp => {
-    const timeKey = new Date(exp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    timelineDataMap[timeKey] = (timelineDataMap[timeKey] || 0) + exp.amount;
+  
+  const now = new Date();
+  let padDates = [];
+  
+  if (activeFilter === 'Week') {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      padDates.push(d);
+    }
+  } else if (activeFilter === 'Month') {
+    let targetMonth = now.getMonth();
+    let targetYear = now.getFullYear();
+    if (monthStart) {
+       const startD = new Date(monthStart);
+       targetMonth = startD.getMonth();
+       targetYear = startD.getFullYear();
+    }
+    const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    const endDay = (targetMonth === now.getMonth() && targetYear === now.getFullYear()) ? now.getDate() : daysInMonth;
+    for (let i = 1; i <= endDay; i++) {
+      padDates.push(new Date(targetYear, targetMonth, i));
+    }
+  } else if (activeFilter === 'Year') {
+     for (let i = 0; i < 12; i++) {
+        padDates.push(new Date(now.getFullYear(), i, 1));
+     }
+  } else if (activeFilter === 'Day') {
+     padDates.push(now);
+  }
+
+  padDates.forEach(d => {
+     const timeKey = activeFilter === 'Year' ? d.toLocaleDateString('en-US', { month: 'short' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+     timelineDataMap[timeKey] = { amount: 0, rawDate: d.getTime() };
   });
+
+  filteredExpenses.forEach(exp => {
+    const d = new Date(exp.date);
+    const timeKey = activeFilter === 'Year' ? d.toLocaleDateString('en-US', { month: 'short' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (timelineDataMap[timeKey]) {
+       timelineDataMap[timeKey].amount += exp.amount;
+    } else {
+       timelineDataMap[timeKey] = { amount: exp.amount, rawDate: d.getTime() };
+    }
+  });
+
   const timelineData = Object.entries(timelineDataMap)
-    .map(([time, amount]) => ({ time, amount, rawDate: new Date(time) }))
+    .map(([time, data]) => ({ time, amount: data.amount, rawDate: data.rawDate }))
     .sort((a, b) => a.rawDate - b.rawDate);
 
   // Transaction list filtered
@@ -523,31 +566,60 @@ export const BudgetDashboard = ({
         {/* ═══ ANALYTICS TAB ═══ */}
         {activeTab === 'analytics' && (
           <motion.div key="analytics" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            {/* Time Filter */}
+            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: 100, padding: 4, marginBottom: 16, border: '1px solid rgba(255,255,255,0.05)', width: 'fit-content', margin: '0 auto 16px' }}>
+              {TIME_FILTERS.map(f => (
+                <button key={f} onClick={() => setActiveFilter(f)}
+                  style={{ padding: '7px 14px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: activeFilter === f ? '#fff' : 'transparent', color: activeFilter === f ? '#000' : 'rgba(255,255,255,0.5)', transition: 'all 0.2s', outline: 'none' }}>
+                  {f}
+                </button>
+              ))}
+            </div>
+
             {/* Chart toggle */}
             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 24, padding: '20px', border: '1px solid rgba(255,255,255,0.08)', marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <h3 style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>Spending Trends</h3>
                 <div style={{ display: 'flex', gap: 8, background: 'rgba(0,0,0,0.2)', padding: 4, borderRadius: 12 }}>
                   <button onClick={() => setActiveChart('trend')} style={{ width: 32, height: 32, borderRadius: 8, background: activeChart === 'trend' ? 'rgba(255,255,255,0.1)' : 'transparent', color: activeChart === 'trend' ? '#fff' : 'rgba(255,255,255,0.4)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Activity size={16} /></button>
+                  <button onClick={() => setActiveChart('bar')} style={{ width: 32, height: 32, borderRadius: 8, background: activeChart === 'bar' ? 'rgba(255,255,255,0.1)' : 'transparent', color: activeChart === 'bar' ? '#fff' : 'rgba(255,255,255,0.4)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><BarChart2 size={16} /></button>
                   <button onClick={() => setActiveChart('category')} style={{ width: 32, height: 32, borderRadius: 8, background: activeChart === 'category' ? 'rgba(255,255,255,0.1)' : 'transparent', color: activeChart === 'category' ? '#fff' : 'rgba(255,255,255,0.4)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><PieChartIcon size={16} /></button>
+                  <button onClick={() => setActiveChart('radar')} style={{ width: 32, height: 32, borderRadius: 8, background: activeChart === 'radar' ? 'rgba(255,255,255,0.1)' : 'transparent', color: activeChart === 'radar' ? '#fff' : 'rgba(255,255,255,0.4)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Target size={16} /></button>
                 </div>
               </div>
               <div style={{ height: 220 }}>
-                {filteredExpenses.length === 0 ? (
+                {filteredExpenses.length === 0 && activeChart !== 'trend' && activeChart !== 'bar' ? (
                   <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>No data for this period</div>
                 ) : activeChart === 'trend' ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={timelineData}>
                       <defs>
                         <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#fff" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#fff" stopOpacity={0} />
+                          <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} dy={10} />
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} dy={10} minTickGap={20} />
                       <RechartsTooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="amount" stroke="#fff" strokeWidth={3} fillOpacity={1} fill="url(#colorSpend)" />
+                      <Area type="monotone" dataKey="amount" stroke="#818cf8" strokeWidth={3} fillOpacity={1} fill="url(#colorSpend)" />
                     </AreaChart>
+                  </ResponsiveContainer>
+                ) : activeChart === 'bar' ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={timelineData}>
+                      <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} dy={10} minTickGap={20} />
+                      <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                      <Bar dataKey="amount" fill="#34d399" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : activeChart === 'radar' ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={donutData}>
+                      <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                      <PolarAngleAxis dataKey="name" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10 }} />
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Radar name="Spent" dataKey="value" stroke="#f43f5e" fill="#f43f5e" fillOpacity={0.4} />
+                    </RadarChart>
                   </ResponsiveContainer>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
