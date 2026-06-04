@@ -142,8 +142,8 @@ export const useExpenses = (userId) => {
         setExpenses(expData.map(e => ({
           id: e.id,
           amount: Number(e.amount),
-          sector: e.category, // Map back category -> sector
-          note: e.merchant || '', // Map back merchant -> note
+          sector: e.sector || e.category || 'other',
+          note: e.note || e.merchant || '',
           date: new Date(e.date + 'T12:00:00Z').toISOString(),
           createdAt: new Date(e.createdAt).getTime(),
         })));
