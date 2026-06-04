@@ -70,12 +70,12 @@ const AddActionSheet = ({ isOpen, onClose, onSelectAction }) => {
           {/* Sheet */}
           <motion.div
             className="aura-sheet"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+            initial={{ y: '100%', x: '-50%' }}
+            animate={{ y: 0, x: '-50%' }}
+            exit={{ y: '100%', x: '-50%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             onClick={e => e.stopPropagation()}
-            style={{ position: 'fixed', left: '50%', bottom: 0, zIndex: 201, width: 'min(100vw, 430px)', transform: 'translateX(-50%)' }}
+            style={{ position: 'fixed', left: '50%', bottom: 0, zIndex: 201, width: 'min(100vw, 430px)', background: '#111113', borderRadius: '36px 36px 0 0', padding: '32px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 -20px 40px rgba(0,0,0,0.5)' }}
           >
             <div className="aura-sheet-handle" />
 

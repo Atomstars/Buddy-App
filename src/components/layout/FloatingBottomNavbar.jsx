@@ -26,11 +26,14 @@ export const FloatingBottomNavbar = ({ onFABPress }) => {
   })();
 
   return (
-    <nav style={{
-      position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-      width: '100%', maxWidth: '480px', zIndex: 100,
-      padding: '0 16px 24px', pointerEvents: 'none'
-    }}>
+    <motion.nav 
+      initial={{ y: 100, opacity: 0, x: "-50%" }}
+      animate={{ y: 0, opacity: 1, x: "-50%" }}
+      style={{
+        position: 'fixed', bottom: 0, left: '50%',
+        width: '100%', maxWidth: '480px', zIndex: 100,
+        padding: '0 16px 24px', pointerEvents: 'none'
+      }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         background: 'rgba(17, 17, 19, 0.85)', backdropFilter: 'blur(20px)',
@@ -76,7 +79,7 @@ export const FloatingBottomNavbar = ({ onFABPress }) => {
           );
         })}
       </div>
-    </nav>
+    </motion.nav>
   );
 };
 

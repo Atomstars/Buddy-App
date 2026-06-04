@@ -17,8 +17,8 @@ export const AIAssistantReview = ({ isOpen, aiData, onConfirm, onEdit, onCancel 
                         style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)' }}
                     />
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                        style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 401, width: 'min(90vw, 400px)', background: '#18181b', borderRadius: 28, padding: 32, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}
+                        initial={{ scale: 0.9, opacity: 0, x: "-50%", y: "-50%" }} animate={{ scale: 1, opacity: 1, x: "-50%", y: "-50%" }} exit={{ scale: 0.9, opacity: 0, x: "-50%", y: "-50%" }}
+                        style={{ position: 'fixed', left: '50%', top: '50%', zIndex: 401, width: 'min(90vw, 400px)', background: '#18181b', borderRadius: 28, padding: 32, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
                             <div style={{ width: 64, height: 64, borderRadius: 20, background: isLowConfidence ? 'rgba(245,158,11,0.1)' : 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${isLowConfidence ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.2)'}` }}>
