@@ -2,8 +2,37 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const Tesseract = require('tesseract.js');
+const { reviewDay, generateInsights } = require('../services/buddyBrain');
+const { hasKey } = require('../services/aiProvider');
 
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Daily reflection: takes the day's diary + tasks + expenses, returns a warm review.
+router.post('/review', async (req, res) => {
+  try {
+    const result = await reviewDay(req.body || {});
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('AI review error:', error);
+    res.status(500).json({ error: 'Failed to generate review' });
+  }
+});
+
+// Cross-domain insights for the Insights page.
+router.post('/insights', async (req, res) => {
+  try {
+    const result = await generateInsights(req.body || {});
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('AI insights error:', error);
+    res.status(500).json({ error: 'Failed to generate insights' });
+  }
+});
+
+// Lets the frontend show whether real AI (Groq) is wired up.
+router.get('/status', (_req, res) => {
+  res.json({ ai: hasKey() ? 'groq' : 'heuristic' });
+});
 
 router.post('/extract', upload.single('image'), async (req, res) => {
     try {

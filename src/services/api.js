@@ -1,6 +1,33 @@
 import { supabase } from '../utils/supabaseClient';
 import Tesseract from 'tesseract.js';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Local fallback so the diary review never dead-ends if the backend is offline.
+const localReview = (p) => {
+  const tasks = p.tasks || [];
+  const done = tasks.filter((t) => t.done).length;
+  const total = tasks.length;
+  const completion = total ? Math.round((done / total) * 100) : null;
+  const spend = (p.expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const wins = [];
+  if (done > 0) wins.push(`You completed ${done} task${done > 1 ? 's' : ''} today.`);
+  if ((p.wins || []).filter(Boolean).length) wins.push(...p.wins.filter(Boolean));
+  if (!wins.length) wins.push('You took a moment to reflect — that counts.');
+  const improvements = [];
+  if (total && completion < 50) improvements.push(`Only ${completion}% of tasks done — pick one key task tomorrow.`);
+  if ((p.improvements || []).filter(Boolean).length) improvements.push(...p.improvements.filter(Boolean));
+  if (!improvements.length) improvements.push('Carry today’s momentum forward.');
+  return {
+    summary: `${total ? `You finished ${done} of ${total} tasks. ` : ''}${spend > 0 ? `You spent ₹${spend.toFixed(0)}. ` : ''}Reflecting daily is how progress compounds.`,
+    wins: wins.slice(0, 3),
+    improvements: improvements.slice(0, 3),
+    connection: '',
+    focus_tomorrow: 'Choose one thing that would make tomorrow a win.',
+    _engine: 'local-fallback',
+  };
+};
+
 export const api = {
     transactions: {
         getAll: async (userId, token) => {
@@ -85,6 +112,45 @@ export const api = {
             } catch (err) {
                 console.error("OCR Error:", err);
                 throw new Error("Failed to extract data from image");
+            }
+        },
+        // Ask the buddy to reflect on a day. Falls back locally if backend is down.
+        review: async (payload) => {
+            try {
+                const res = await fetch(`${API_BASE}/api/ai/review`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error(`status ${res.status}`);
+                const json = await res.json();
+                return json.data;
+            } catch (e) {
+                console.warn('AI review backend unavailable, using local fallback:', e.message);
+                return localReview(payload);
+            }
+        },
+        insights: async (payload) => {
+            try {
+                const res = await fetch(`${API_BASE}/api/ai/insights`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error(`status ${res.status}`);
+                const json = await res.json();
+                return json.data;
+            } catch (e) {
+                console.warn('AI insights backend unavailable:', e.message);
+                return { insights: [], _engine: 'unavailable' };
+            }
+        },
+        status: async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/ai/status`);
+                return await res.json();
+            } catch {
+                return { ai: 'offline' };
             }
         }
     }

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   CalendarCheck, IndianRupee, Plus, Sparkles, Target, Trash2, Pencil,
   Clock, CheckCircle2, X, CalendarDays, ChevronLeft, ChevronRight, ChevronDown,
-  Flame, Award, Eye, Bell, Repeat, AlertCircle, Play, Pause, RefreshCw, BarChart2, Briefcase, HeartPulse, ShieldAlert
+  Flame, Award, Eye, Bell, Repeat, AlertCircle, Play, Pause, RefreshCw, BarChart2, Briefcase, HeartPulse, ShieldAlert, History
 } from 'lucide-react';
 import { getLocalTodayDateString, formatDateISO, isToday, formatDate, isPast } from '../utils/dateUtils';
 
@@ -124,8 +124,18 @@ export const TimetableModule = ({
     return Math.round(taskRatio + hourRatio);
   }, [dailyTasks, doneCount, plannedHoursTotal, actualHoursTotal]);
 
-  // Streak tracker
-  const taskStreak = 12; // Static high-fidelity mockup representation
+  // Streak tracker — real consecutive days (ending today/yesterday) with a completed task
+  const taskStreak = useMemo(() => {
+    const doneDates = new Set(tasks.filter(t => t.done).map(t => t.date));
+    let streak = 0;
+    const d = new Date();
+    if (!doneDates.has(formatDateISO(d))) d.setDate(d.getDate() - 1); // grace: today not done yet
+    while (doneDates.has(formatDateISO(d))) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  }, [tasks]);
 
   // Motivation triggers
   const motivationQuote = useMemo(() => {
@@ -295,9 +305,9 @@ export const TimetableModule = ({
         {/* Left: Flame Streak / Title */}
         <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 24, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b', marginBottom: 8 }}>
-              <Flame size={18} fill="#f59e0b" style={{ transform: 'scale(1)', animation: 'pulse-glow 1s infinite alternate' }} />
-              <span style={{ fontSize: 13, fontWeight: 800 }}>{taskStreak} Day Streak</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: taskStreak > 0 ? '#f59e0b' : 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+              <Flame size={18} fill={taskStreak > 0 ? '#f59e0b' : 'none'} style={{ transform: 'scale(1)', animation: taskStreak > 0 ? 'pulse-glow 1s infinite alternate' : 'none' }} />
+              <span style={{ fontSize: 13, fontWeight: 800 }}>{taskStreak > 0 ? `${taskStreak} Day Streak` : 'Build your streak'}</span>
             </div>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: -0.5 }}>
               {isToday(localDate) ? 'Today' : formatDate(localDate)}
@@ -534,20 +544,33 @@ export const TimetableModule = ({
         ))}
       </div>
 
-      {/* Add Task Primary Action Button */}
-      {!isPast(localDate) && (
-        <motion.button
-          onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
-          whileTap={{ scale: 0.97 }}
-          style={{
-            width: '100%', height: 50, borderRadius: 16, background: '#fff', color: '#000',
-            fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 6, marginBottom: 24, cursor: 'pointer'
-          }}
-        >
-          <Plus size={16} /> Add Daily Task
-        </motion.button>
+      {/* Backfill hint when viewing a past day */}
+      {isPast(localDate) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 14, padding: '10px 14px', marginBottom: 14 }}>
+          <History size={15} color="#fbbf24" />
+          <span style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600 }}>
+            Catching up on a missed day — you can still log what you did.
+          </span>
+        </div>
       )}
+
+      {/* Add Task Primary Action Button — available for any day, incl. past (backfill) */}
+      <motion.button
+        onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
+        whileTap={{ scale: 0.97 }}
+        style={{
+          width: '100%', height: 50, borderRadius: 16,
+          background: isPast(localDate) ? 'rgba(245,158,11,0.12)' : '#fff',
+          color: isPast(localDate) ? '#fbbf24' : '#000',
+          border: isPast(localDate) ? '1px solid rgba(245,158,11,0.3)' : 'none',
+          fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 6, marginBottom: 24, cursor: 'pointer'
+        }}
+      >
+        {isPast(localDate)
+          ? <><History size={16} /> Log a Missed Task</>
+          : <><Plus size={16} /> Add Daily Task</>}
+      </motion.button>
 
       {/* ── SCHEDULE ACTIVE TASKS CONTAINER ── */}
       <div>
@@ -569,7 +592,9 @@ export const TimetableModule = ({
             {sortedTasks.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '36px 0', background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 20, color: 'rgba(255,255,255,0.3)' }}>
                 <CalendarDays size={24} style={{ marginBottom: 8, opacity: 0.4 }} />
-                <span style={{ fontSize: 12 }}>No entries for today</span>
+                <span style={{ fontSize: 12 }}>
+                  {isToday(localDate) ? 'No entries for today' : isPast(localDate) ? 'Nothing logged for this day yet' : 'No entries planned'}
+                </span>
               </div>
             ) : (
               sortedTasks.map(task => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   User, Flame, ArrowRight, Sparkles, Bell, CalendarCheck, CameraIcon,
-  TrendingUp, ChevronRight, Wallet,
+  TrendingUp, ChevronRight, Wallet, BookOpen, Target, BrainCircuit,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/formatters';
@@ -24,6 +24,8 @@ export const GlobalHomeHub = ({
   bills = [],
   monthlyStats,
   displayLabel,
+  goalsCount = 0,
+  journaledToday = false,
 }) => {
   const navigate = useNavigate();
   const [time, setTime] = useState(new Date());
@@ -56,11 +58,12 @@ export const GlobalHomeHub = ({
 
   // Daily focus quote
   const focusMessages = [
-    'Track every rupee. Own your future.',
-    'Small habits build big wealth.',
+    'Small steps today shape who you become.',
+    'Mind, money, and time — one day at a time.',
     'Today\'s discipline is tomorrow\'s freedom.',
-    'Plan for June. Win in July.',
-    'Every saved rupee is a step forward.',
+    'Show up for yourself. That\'s the whole game.',
+    'Reflect, adjust, and keep moving forward.',
+    'A calm mind and a clear plan beat a busy day.',
   ];
   const focusMsg = focusMessages[new Date().getDate() % focusMessages.length];
 
@@ -208,7 +211,18 @@ export const GlobalHomeHub = ({
           </div>
         </motion.div>
 
-
+        {/* ── Your Life: Diary · Manifest · Insights ── */}
+        <motion.div {...item(0.34)}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', margin: '8px 2px 4px' }}>Your Life</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <LifeCard onClick={() => navigate('/diary')} icon={BookOpen} color="#8b5cf6"
+              title="Diary" sub={journaledToday ? 'Logged today' : 'Reflect'} />
+            <LifeCard onClick={() => navigate('/manifest')} icon={Target} color="#10b981"
+              title="Manifest" sub={goalsCount > 0 ? `${goalsCount} goal${goalsCount > 1 ? 's' : ''}` : 'Set goals'} />
+            <LifeCard onClick={() => navigate('/insights')} icon={BrainCircuit} color="#6366f1"
+              title="Insights" sub="AI patterns" />
+          </div>
+        </motion.div>
 
       </div>
 
@@ -216,5 +230,21 @@ export const GlobalHomeHub = ({
     </div>
   );
 };
+
+const LifeCard = ({ onClick, icon: Icon, color, title, sub }) => (
+  <motion.div
+    onClick={onClick}
+    whileTap={{ scale: 0.96 }}
+    style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 20, padding: 16, border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: 10 }}
+  >
+    <div style={{ width: 36, height: 36, borderRadius: 12, background: color + '26', border: `1px solid ${color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Icon size={18} style={{ color }} />
+    </div>
+    <div>
+      <p style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{title}</p>
+      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{sub}</p>
+    </div>
+  </motion.div>
+);
 
 export default GlobalHomeHub;

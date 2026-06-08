@@ -20,7 +20,14 @@ const AuthScreen = ({ onSignIn, onSignUp, onGoogleSignIn, onPhoneSignIn, onVerif
     clearMessages();
     setLoading(true);
     try {
-      if (onDevSignIn) onDevSignIn();
+      const { error: authError } = (await onDevSignIn?.()) || {};
+      if (authError) {
+        setError(
+          /anonymous|disabled|not enabled/i.test(authError.message)
+            ? 'Guest mode is off. Enable "Anonymous sign-ins" in Supabase.'
+            : authError.message
+        );
+      }
     } catch {
       setError('Something went wrong');
     } finally {
@@ -113,7 +120,7 @@ const AuthScreen = ({ onSignIn, onSignUp, onGoogleSignIn, onPhoneSignIn, onVerif
             </div>
             <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-1px' }}>Aura</h1>
           </div>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: 500, letterSpacing: '0.02em' }}>Your Personal Finance OS</p>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', fontWeight: 500, letterSpacing: '0.02em' }}>Money · Time · Mind — your life buddy</p>
         </motion.div>
 
         {/* MIDDLE: Floating Glass Auth Card */}

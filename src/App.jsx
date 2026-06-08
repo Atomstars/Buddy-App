@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import useExpenses from './hooks/useExpenses';
 import useTimetable from './hooks/useTimetable';
+import useDiary from './hooks/useDiary';
+import useManifest from './hooks/useManifest';
 import { useAuth } from './hooks/useAuth';
 import { formatDateISO } from './utils/dateUtils';
 import { TimetableModule } from './components/TimetableModule';
@@ -20,6 +22,8 @@ import HistoryPage from './components/HistoryPage';
 import AIInsightsPage from './components/AIInsightsPage';
 import MorePage from './components/MorePage';
 import VisionPage from './components/VisionPage';
+import DiaryPage from './components/DiaryPage';
+import ManifestPage from './components/ManifestPage';
 import { AddExpenseModal } from './components/AddExpenseModal';
 import { AIAssistantReview } from './components/AIAssistantReview';
 import { TransactionEditModal } from './components/TransactionEditModal';
@@ -49,6 +53,8 @@ function App() {
 
   // Data hooks — all receive userId for isolation
   const timetable = useTimetable(userId);
+  const diary = useDiary(userId);
+  const manifest = useManifest(userId);
   const {
     expenses, budgets, weeklyTarget, monthlyTarget, monthlyIncome,
     addExpense, updateExpense, removeExpense,
@@ -221,6 +227,8 @@ function App() {
                   bills={bills}
                   monthlyStats={{ spent: monthlyStats.total ?? 0, target: monthlyStats.totalBudget ?? 30000, remaining: monthlyStats.remaining ?? 0 }}
                   displayLabel={displayLabel}
+                  goalsCount={manifest.goals.filter((g) => g.status !== 'done').length}
+                  journaledToday={Boolean(diary.getEntry(formatDateISO(selectedDate)))}
                 />
               }
             />
@@ -268,12 +276,34 @@ function App() {
               path="/insights"
               element={
                 <AppShell title="AI Insights" onProfileClick={() => navigate('/more')} onFABPress={handleFABPress}>
-                  <AIInsightsPage />
+                  <AIInsightsPage
+                    expenses={expenses}
+                    tasks={timetable.tasks}
+                    moods={diary.entries.map((e) => ({ date: e.date, mood: e.mood }))}
+                  />
                 </AppShell>
               }
             />
 
             <Route path="/vision" element={<VisionPage />} />
+
+            <Route
+              path="/diary"
+              element={
+                <AppShell title="Diary" onProfileClick={() => navigate('/more')} onFABPress={handleFABPress}>
+                  <DiaryPage diary={diary} tasks={timetable.tasks} expenses={expenses} />
+                </AppShell>
+              }
+            />
+
+            <Route
+              path="/manifest"
+              element={
+                <AppShell title="Manifest" onProfileClick={() => navigate('/more')} onFABPress={handleFABPress}>
+                  <ManifestPage manifest={manifest} />
+                </AppShell>
+              }
+            />
 
             <Route
               path="/more"
@@ -309,7 +339,6 @@ function App() {
 
             {/* Redirect legacy routes */}
             <Route path="/analytics" element={<Navigate to="/budget" replace />} />
-            <Route path="/manifest"  element={<Navigate to="/more" replace />} />
             <Route path="/investing" element={<Navigate to="/insights" replace />} />
             <Route path="*"          element={<Navigate to="/" replace />} />
           </Routes>

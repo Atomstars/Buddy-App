@@ -67,12 +67,21 @@ const MonthNavHeader = ({ displayLabel, isCurrentMonth, isFutureMonth, prevMonth
         </span>
       )}
     </div>
-    <button
-      id="budget-settings-btn"
-      onClick={onSettingsClick}
-      style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-      <Settings size={16} color="rgba(255,255,255,0.7)" />
-    </button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <button
+        onClick={nextMonth}
+        aria-label="Next month"
+        style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <ChevronRight size={18} color="#fff" />
+      </button>
+      <button
+        id="budget-settings-btn"
+        onClick={onSettingsClick}
+        aria-label="Budget settings"
+        style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+        <Settings size={16} color="rgba(255,255,255,0.7)" />
+      </button>
+    </div>
   </div>
 );
 

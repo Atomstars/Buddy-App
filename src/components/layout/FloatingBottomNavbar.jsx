@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Wallet, Plus, CalendarDays, MoreHorizontal } from 'lucide-react';
+import { Home, Wallet, Plus, CalendarDays, BookOpen } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const TABS = [
-  { id: 'home',     label: 'Home',     icon: Home,          path: '/' },
-  { id: 'budget',   label: 'Budget',   icon: Wallet,        path: '/budget' },
-  { id: 'schedule', label: 'Schedule', icon: CalendarDays,  path: '/schedule' },
-  { id: 'more',     label: 'More',     icon: MoreHorizontal,path: '/more' },
+  { id: 'home',     label: 'Home',     icon: Home,         path: '/' },
+  { id: 'budget',   label: 'Budget',   icon: Wallet,       path: '/budget' },
+  { id: 'schedule', label: 'Schedule', icon: CalendarDays, path: '/schedule' },
+  { id: 'diary',    label: 'Diary',    icon: BookOpen,     path: '/diary' },
 ];
 
 export const FloatingBottomNavbar = ({ onFABPress }) => {
@@ -19,9 +19,7 @@ export const FloatingBottomNavbar = ({ onFABPress }) => {
     if (p === '/')          return 'home';
     if (p === '/budget')    return 'budget';
     if (p === '/schedule')  return 'schedule';
-    if (p === '/history')   return 'history';
-    if (p === '/insights')  return 'insights';
-    if (p === '/more')      return 'more';
+    if (p === '/diary')     return 'diary';
     return 'home';
   })();
 

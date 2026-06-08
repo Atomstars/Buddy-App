@@ -7,31 +7,19 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if we have a local mock session saved
-    const savedMock = localStorage.getItem('sb-mock-session');
-    if (savedMock) {
-      try {
-        const mockUser = JSON.parse(savedMock);
-        setUser(mockUser);
-        setSession({ user: mockUser });
-        setLoading(false);
-        return;
-      } catch (e) {
-        localStorage.removeItem('sb-mock-session');
-      }
-    }
+    // One-time migration: clear any legacy fake "dev" session from older builds.
+    // It used a non-existent UUID that RLS rejects, so it must not linger.
+    localStorage.removeItem('sb-mock-session');
 
-    // Get initial session
+    // Get initial session (real Supabase session is the single source of truth)
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for auth state changes
+    // Listen for auth state changes (sign in/out, token refresh, anonymous sign-in)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      // If we have a mock user running, don't let Supabase empty state overwrite it
-      if (localStorage.getItem('sb-mock-session')) return;
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
@@ -72,23 +60,19 @@ export const useAuth = () => {
     return { data, error };
   }, []);
 
-  const signInDev = useCallback(() => {
-    const mockUser = {
-      id: '00000000-0000-0000-0000-000000000000',
-      email: 'developer@budgetbuddy.local',
-      user_metadata: {
-        full_name: 'Developer Guest',
-        name: 'Developer Guest'
-      }
-    };
-    setUser(mockUser);
-    setSession({ user: mockUser });
-    localStorage.setItem('sb-mock-session', JSON.stringify(mockUser));
-    return { data: { user: mockUser }, error: null };
+  // Guest mode = a REAL anonymous Supabase user. It gets a genuine auth.uid(),
+  // so RLS works and each guest receives their own isolated data slot.
+  // Requires "Anonymous sign-ins" to be enabled in the Supabase dashboard.
+  const signInDev = useCallback(async () => {
+    const { data, error } = await supabase.auth.signInAnonymously();
+    if (!error && data?.user) {
+      setUser(data.user);
+      setSession(data.session ?? { user: data.user });
+    }
+    return { data, error };
   }, []);
 
   const signOut = useCallback(async () => {
-    localStorage.removeItem('sb-mock-session');
     const { error } = await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -97,6 +81,7 @@ export const useAuth = () => {
 
   const getUserDisplayName = useCallback(() => {
     if (!user) return 'User';
+    if (user.is_anonymous) return 'Guest';
     return user.user_metadata?.full_name
       || user.user_metadata?.name
       || user.email?.split('@')[0]

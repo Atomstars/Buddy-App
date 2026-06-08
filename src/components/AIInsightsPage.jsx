@@ -1,181 +1,99 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Sparkles, TrendingDown, TrendingUp, AlertCircle, BarChart3, Lightbulb } from 'lucide-react';
+import { Sparkles, TrendingDown, TrendingUp, AlertCircle, RefreshCw, Loader2, BrainCircuit } from 'lucide-react';
+import { api } from '../services/api';
 
-const MOCK_INSIGHTS = [
-  {
-    id: 'food',
-    icon: TrendingUp,
-    title: 'Food spending up 23%',
-    body: 'You spent ₹3,400 on food this week — 23% above your weekly average of ₹2,760.',
-    color: '#f43f5e',
-    bg: 'rgba(244,63,94,0.12)',
-    border: 'rgba(244,63,94,0.2)',
-  },
-  {
-    id: 'saving',
-    icon: TrendingDown,
-    title: 'On track to save ₹6,200',
-    body: 'Based on your current pace, you\'ll save ₹6,200 this month — above your ₹5,000 goal.',
-    color: '#10b981',
-    bg: 'rgba(16,185,129,0.12)',
-    border: 'rgba(16,185,129,0.2)',
-  },
-  {
-    id: 'recurring',
-    icon: AlertCircle,
-    title: '3 recurring charges detected',
-    body: 'Netflix, Spotify, and Gym are costing you ₹2,148/month. Review subscriptions?',
-    color: '#f59e0b',
-    bg: 'rgba(245,158,11,0.12)',
-    border: 'rgba(245,158,11,0.2)',
-  },
-  {
-    id: 'pattern',
-    icon: BarChart3,
-    title: 'Weekend spending pattern',
-    body: 'Your weekend spending is 40% higher than weekdays. Most of it goes to food & shopping.',
-    color: '#8b5cf6',
-    bg: 'rgba(139,92,246,0.12)',
-    border: 'rgba(139,92,246,0.2)',
-  },
-  {
-    id: 'tip',
-    icon: Lightbulb,
-    title: 'Smart tip for you',
-    body: 'Setting a ₹500 daily limit on food spending could save you ₹3,000+ this month.',
-    color: '#6366f1',
-    bg: 'rgba(99,102,241,0.12)',
-    border: 'rgba(99,102,241,0.2)',
-  },
-];
+const TONE = {
+  positive: { icon: TrendingDown, color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.2)' },
+  warning:  { icon: AlertCircle, color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.2)' },
+  neutral:  { icon: TrendingUp,  color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.2)' },
+};
 
-const AIInsightsPage = () => {
+const AIInsightsPage = ({ expenses = [], tasks = [], moods = [] }) => {
+  const [insights, setInsights] = useState([]);
+  const [engine, setEngine] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const result = await api.ai.insights({
+      expenses: expenses.map((e) => ({ amount: e.amount, sector: e.sector, date: e.date })),
+      tasks: tasks.map((t) => ({ title: t.title, done: t.done, date: t.date })),
+      moods,
+    });
+    setInsights(result.insights || []);
+    setEngine(result._engine || null);
+    setLoading(false);
+  }, [expenses, tasks, moods]);
+
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <div className="aura-insights">
-      {/* Locked header */}
-      <motion.div
-        className="aura-insights-locked-header"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-      >
-        <div className="aura-insights-lock-icon">
-          <div className="aura-insights-lock-glow" />
-          <Sparkles size={26} style={{ color: '#fbbf24', position: 'relative', zIndex: 1 }} />
+    <div style={{ paddingBottom: 160 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <BrainCircuit size={20} color="#c4b5fd" />
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>AI Insights</h2>
+          </div>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+            Patterns across your money, time and mood.
+          </p>
         </div>
+        <button onClick={load} disabled={loading} style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff' }}>
+          {loading ? <Loader2 size={16} className="aura-spin" /> : <RefreshCw size={16} />}
+        </button>
+      </div>
 
-        <h2 className="aura-insights-title">AI Insights</h2>
-        <p className="aura-insights-desc">
-          Unlock intelligent financial analysis powered by Aura's AI engine. Get personalized spending patterns, savings opportunities, and monthly intelligence.
-        </p>
-      </motion.div>
+      {/* Engine badge */}
+      {engine && !loading && (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999, marginBottom: 16,
+          background: engine === 'groq' ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)',
+          border: `1px solid ${engine === 'groq' ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}` }}>
+          <Sparkles size={12} color={engine === 'groq' ? '#10b981' : '#94a3b8'} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: engine === 'groq' ? '#10b981' : '#94a3b8' }}>
+            {engine === 'groq' ? 'Live AI (Groq)' : engine === 'unavailable' ? 'Backend offline' : 'Basic mode — add a Groq key for deeper AI'}
+          </span>
+        </div>
+      )}
 
-      {/* Preview cards — blurred */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        style={{ position: 'relative' }}
-      >
-        <div className="aura-insights-blur">
-          {MOCK_INSIGHTS.slice(0, 3).map((ins) => {
-            const Icon = ins.icon;
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>
+          <Loader2 size={28} className="aura-spin" style={{ marginBottom: 12 }} />
+          <p style={{ fontSize: 13 }}>Analyzing your patterns...</p>
+        </div>
+      ) : insights.length === 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px 20px', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
+          <BrainCircuit size={28} style={{ marginBottom: 12, opacity: 0.4 }} />
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>Not enough data yet</p>
+          <p style={{ fontSize: 12, marginTop: 6, maxWidth: 260 }}>
+            Log a few expenses, tasks and diary entries — Aura will start spotting patterns for you.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {insights.map((ins, i) => {
+            const tone = TONE[ins.tone] || TONE.neutral;
+            const Icon = tone.icon;
             return (
-              <div key={ins.id} className="aura-insight-card-real" style={{ marginBottom: '10px' }}>
-                <div
-                  className="aura-insight-icon"
-                  style={{ background: ins.bg, borderColor: ins.border }}
-                >
-                  <Icon size={16} style={{ color: ins.color }} />
+              <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
+                style={{ display: 'flex', gap: 12, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 18, padding: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: tone.bg, border: `1px solid ${tone.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={16} style={{ color: tone.color }} />
                 </div>
-                <div className="aura-insight-text">
-                  <h4>{ins.title}</h4>
-                  <p>{ins.body}</p>
+                <div>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{ins.title}</h4>
+                  <p style={{ fontSize: 13, lineHeight: 1.5, color: 'rgba(255,255,255,0.6)' }}>{ins.body}</p>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
+      )}
 
-        {/* Overlay */}
-        <div
-          style={{
-            position: 'absolute', inset: 0,
-            background: 'linear-gradient(180deg, transparent 0%, rgba(8,8,9,0.55) 50%, rgba(8,8,9,0.92) 100%)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-            paddingBottom: '12px',
-            borderRadius: 'var(--r-xl)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '999px' }}>
-            <Lock size={12} style={{ color: '#fbbf24' }} />
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#fbbf24' }}>Locked — Aura Prime only</span>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* What's included */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        style={{
-          background: 'var(--surface-1)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--r-2xl)',
-          padding: '20px',
-        }}
-      >
-        <p style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: '14px' }}>
-          What's included in Prime
-        </p>
-        {[
-          'Spending pattern analysis',
-          'Savings opportunity alerts',
-          'Subscription audit report',
-          'Weekly financial briefing',
-          'Personalized budget advice',
-          'Predictive month-end projections',
-        ].map((feat, i) => (
-          <div
-            key={i}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '9px 0',
-              borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-            }}
-          >
-            <div style={{
-              width: '18px', height: '18px', borderRadius: '50%',
-              background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: '9px', color: '#fbbf24', fontWeight: 800 }}>✓</span>
-            </div>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-2)' }}>{feat}</span>
-          </div>
-        ))}
-      </motion.div>
-
-      {/* Upgrade CTA */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <motion.button
-          className="aura-upgrade-btn"
-          whileTap={{ scale: 0.97 }}
-          style={{ WebkitTapHighlightColor: 'transparent' }}
-        >
-          <Sparkles size={18} />
-          Unlock Aura Prime
-        </motion.button>
-        <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '12px', color: 'var(--text-3)' }}>
-          ₹99/month · Cancel anytime
-        </p>
-      </motion.div>
+      <style>{`.aura-spin{animation:aura-spin 0.9s linear infinite}@keyframes aura-spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 };
