@@ -1,7 +1,9 @@
 import { supabase } from '../utils/supabaseClient';
 import Tesseract from 'tesseract.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Dev: local Express on :5000. Production (Vercel): the deployed backend
+// service lives at /_/backend on the same origin (see vercel.json).
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '/_/backend');
 
 // Local fallback so the diary review never dead-ends if the backend is offline.
 const localReview = (p) => {
